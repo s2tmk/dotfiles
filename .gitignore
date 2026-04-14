@@ -1,0 +1,30 @@
+# ========
+# Claude Code (.claude) 用途
+# ========
+
+# ---- 認証・資格情報 ----
+.credentials.json
+
+# ---- ローカル専用設定 ----
+settings.local.json
+
+# ---- セッション履歴 ----
+projects/
+
+# ---- 分析キャッシュ ----
+statsig/
+
+# ---- 自動バックアップファイル ----
+*.bak
+*.backup
+settings.json.*.bak
+settings.json.backup.*
+
+# ---- OS生成ファイル ----
+.DS_Store
+Thumbs.db
+
+# ---- エディタ・IDE ----
+*.swp
+*.swo
+*~
