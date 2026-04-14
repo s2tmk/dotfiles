@@ -25,5 +25,9 @@
   },
   "language": "japanese",
   "cleanupPeriodDays": 28,
-  "effortLevel": "high"
+  "effortLevel": "high",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.py"
+  }
 }
