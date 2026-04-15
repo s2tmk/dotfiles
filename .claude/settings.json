@@ -1,15 +1,5 @@
 {
-  "sandbox": {
-    "enabled": true,
-    "allowUnsandboxedCommands": false,
-    "network": {
-      "allowManagedDomainsOnly": true,
-      "allowedDomains": ["github.com", "*.npmjs.org"]
-    },
-    "filesystem": {
-      "denyRead": ["~/.aws/credentials", "~/.ssh"]
-    }
-  },
+  "cleanupPeriodDays": 28,
   "permissions": {
     "deny": [
       "Bash(rm -rf *)",
@@ -23,11 +13,38 @@
       "Read(**/*.key)"
     ]
   },
-  "language": "japanese",
-  "cleanupPeriodDays": 28,
-  "effortLevel": "high",
   "statusLine": {
     "type": "command",
-    "command": "~/.claude/statusline.py"
+    "command": "python3 ~/.claude/statusline.py"
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    }
+  },
+  "language": "japanese",
+  "sandbox": {
+    "enabled": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowedDomains": [
+        "github.com",
+        "*.npmjs.org"
+      ],
+      "allowManagedDomainsOnly": true
+    },
+    "filesystem": {
+      "denyRead": [
+        "~/.aws/credentials",
+        "~/.ssh"
+      ]
+    }
+  },
+  "effortLevel": "high",
+  "enabledPlugins": {
+    "codex@openai-codex": true
   }
 }
