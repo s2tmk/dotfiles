@@ -11,7 +11,7 @@ fi
 
 mkdir -p "$TARGET_DIR"
 
-find "$DOTFILES_DIR" -maxdepth 1 -type f | while read -r file; do
+find "$DOTFILES_DIR" -mindepth 1 -maxdepth 1 | while read -r file; do
   filename="$(basename "$file")"
   target="$TARGET_DIR/$filename"
 
