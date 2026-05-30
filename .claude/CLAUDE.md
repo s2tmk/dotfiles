@@ -21,7 +21,7 @@ Self-evaluation is unreliable — agents identify problems then rationalize them
 
 - **Generator**: The main agent (or subagent) doing the work
 - **Evaluator**: An independent subagent that judges the output without seeing the generation process
-- Use code-reviewer / security-reviewer / typescript-reviewer as evaluators — they must NOT receive the generator's self-assessment
+- Use ecc:code-reviewer / ecc:security-reviewer / ecc:typescript-reviewer as evaluators — they must NOT receive the generator's self-assessment
 - Evaluator must have hard thresholds: any criterion below threshold = fail + detailed feedback
 - Anti-pattern to watch for: evaluator identifies real issues then says "overall this is acceptable" — configure evaluator prompts to forbid rationalization
 

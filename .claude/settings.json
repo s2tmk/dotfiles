@@ -24,19 +24,13 @@
   },
   "enabledPlugins": {
     "codex@openai-codex": true,
-    "everything-claude-code@everything-claude-code": true
+    "ecc@ecc": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
       "source": {
         "source": "github",
         "repo": "openai/codex-plugin-cc"
-      }
-    },
-    "everything-claude-code": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/affaan-m/everything-claude-code.git"
       }
     },
     "ecc": {
