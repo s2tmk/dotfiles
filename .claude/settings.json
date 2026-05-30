@@ -1,5 +1,8 @@
 {
   "cleanupPeriodDays": 28,
+  "env": {
+    "CLAUDE_CODE_NO_FLICKER": "1"
+  },
   "permissions": {
     "deny": [
       "Bash(rm -rf *)",
@@ -11,9 +14,10 @@
       "Read(./.env.*)",
       "Read(**/*.pem)",
       "Read(**/*.key)"
-    ]
+    ],
+    "defaultMode": "auto"
   },
-  "model": "claude-opus-4-6",
+  "model": "claude-opus-4-8",
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
@@ -34,6 +38,12 @@
         "source": "git",
         "url": "https://github.com/affaan-m/everything-claude-code.git"
       }
+    },
+    "ecc": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/affaan-m/ECC.git"
+      }
     }
   },
   "language": "japanese",
@@ -41,15 +51,26 @@
     "enabled": true,
     "allowUnsandboxedCommands": false,
     "network": {
-      "allowedDomains": ["github.com", "*.npmjs.org"],
+      "allowedDomains": [
+        "github.com",
+        "*.npmjs.org"
+      ],
       "allowManagedDomainsOnly": true
     },
     "filesystem": {
-      "denyRead": ["~/.aws/credentials", "~/.ssh"]
+      "denyRead": [
+        "~/.aws/credentials",
+        "~/.ssh"
+      ]
     }
   },
   "effortLevel": "xhigh",
-  "env": {
-    "CLAUDE_CODE_NO_FLICKER": "1"
-  }
+  "voice": {
+    "enabled": false,
+    "mode": "hold"
+  },
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": false,
+  "skipAutoPermissionPrompt": true,
+  "voiceEnabled": false
 }
