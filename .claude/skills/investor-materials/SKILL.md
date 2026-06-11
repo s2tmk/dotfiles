@@ -107,7 +107,7 @@ Before delivering:
 
 ## Verification
 
-Run the **research-reviewer** agent on the completed draft. Pass it the draft and the source list from the underlying market-research output — not your reasoning. FAIL => fix and re-run.
+Run the **research-reviewer** agent on the completed draft. Pass it the draft and the source list from the underlying market-research output — not your reasoning. FAIL => fix and re-run. If the document fails research-reviewer twice, STOP and surface the unresolved HIGH findings to the user — do not loop silently.
 
 ## Delivery
 

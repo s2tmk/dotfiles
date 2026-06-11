@@ -16,7 +16,7 @@ add() { emit="${emit}${1}
 if printf '%s' "$prompt" | grep -qiE '新機能|要件定義|仕様|プロダクト設計|new feature|spec|requirements'; then
   add "Routing: requirements-design スキルで潜在要求を確認してから実装に入る。"
 fi
-if printf '%s' "$prompt" | grep -qiE 'UI|画面|デザイン|ダッシュボード|ランディング|LP\b|ワイヤーフレーム|design|screen|dashboard|landing'; then
+if printf '%s' "$prompt" | grep -qiE 'UI|画面|デザイン|ダッシュボード|ランディング|(^|[^a-zA-Z])LP([^a-zA-Z]|$)|ワイヤーフレーム|design|screen|dashboard|landing'; then
   add "Routing: ux-ui-design（設計基準）+ frontend-design（実装）。完成後は design-reviewer で独立評価（FAIL なら出荷しない）。"
 fi
 if printf '%s' "$prompt" | grep -qiE '市場調査|競合|市場規模|デューデリ|market (research|sizing|entry)|competitive|due diligence|TAM'; then

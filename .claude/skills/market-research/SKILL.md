@@ -12,7 +12,7 @@ Produce research that supports decisions, not research theater.
 
 ## Tool Integration
 
-For any non-trivial research question, invoke the **deep-research** harness skill for multi-source fan-out with adversarial verification — its cited output is the raw evidence layer; this skill defines the synthesis and output format on top. For targeted lookups use **WebSearch** (query execution) and **WebFetch** (primary-source retrieval). Never write findings without executed searches.
+For any non-trivial research question, invoke the **deep-research** harness skill for multi-source fan-out with adversarial verification — its cited output is the raw evidence layer; this skill defines the synthesis and output format on top. For targeted lookups use **WebSearch** (query execution) and **WebFetch** (primary-source retrieval). **Hard gate: never write findings without executed searches — a deliverable whose claims lack an executed deep-research/WebSearch trail fails the Verification Gate automatically.**
 
 ## When to Activate
 

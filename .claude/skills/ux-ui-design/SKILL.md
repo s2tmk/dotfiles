@@ -33,7 +33,7 @@ Before any visual work, answer these five questions (Jesse James Garrett's 5 pla
 
 | Plane | Question |
 |---|---|
-| **Strategy** | What problem is this interface solving, and for whom? |
+| **Strategy** | What problem is this interface solving, and for whom? State the job-to-be-done and propose 1-2 latent needs for user confirmation (per requirements-design). |
 | **Scope** | Which features/content are in scope? What is explicitly out? |
 | **Structure** | How is the information organized? What are the navigation flows? |
 | **Skeleton** | Where do interface elements live? What are the layout and interaction patterns? |
