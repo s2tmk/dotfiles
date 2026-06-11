@@ -1,9 +1,16 @@
 {
   "cleanupPeriodDays": 28,
   "env": {
-    "CLAUDE_CODE_NO_FLICKER": "1"
+    "CLAUDE_CODE_NO_FLICKER": "1",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "512000",
+    "ECC_GATEGUARD": "off",
+    "ECC_CONTEXT_MONITOR_COST_WARNINGS": "false",
+    "ECC_DISABLED_HOOKS": "stop:cost-tracker"
   },
   "permissions": {
+    "allow": [
+      "Bash(git *)"
+    ],
     "deny": [
       "Bash(rm -rf *)",
       "Bash(curl *)",
@@ -17,14 +24,15 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-opus-4-8",
+  "model": "claude-fable-5[1m]",
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
     "codex@openai-codex": true,
-    "ecc@ecc": true
+    "ecc@ecc": true,
+    "figma@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "openai-codex": {
@@ -38,6 +46,12 @@
         "source": "git",
         "url": "https://github.com/affaan-m/ECC.git"
       }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
     }
   },
   "language": "japanese",
@@ -47,7 +61,12 @@
     "network": {
       "allowedDomains": [
         "github.com",
-        "*.npmjs.org"
+        "*.npmjs.org",
+        "undraw.co",
+        "unsplash.com",
+        "images.unsplash.com",
+        "api.unsplash.com",
+        "*.rackcdn.com"
       ],
       "allowManagedDomainsOnly": true
     },
@@ -56,14 +75,21 @@
         "~/.aws/credentials",
         "~/.ssh"
       ]
-    }
+    },
+    "excludedCommands": [
+      "git",
+      "git *",
+      "docker",
+      "docker *"
+    ]
   },
   "effortLevel": "xhigh",
   "voice": {
     "enabled": false,
     "mode": "hold"
   },
-  "remoteControlAtStartup": true,
+  "skipDangerousModePermissionPrompt": true,
+  "remoteControlAtStartup": false,
   "agentPushNotifEnabled": false,
   "skipAutoPermissionPrompt": true,
   "voiceEnabled": false
