@@ -24,15 +24,30 @@ rm -f "$list" 2>/dev/null
 [ -n "$edited" ] || exit 0
 
 # --- 1) Format (never blocks; tool missing => silent skip) -------------------
+# Package-runner detection: pnpm/yarn repos don't always expose bins via npx.
+# Walks up so monorepo packages find the workspace-root lockfile.
+runner_for() {
+  local d="$1"
+  while [ -n "$d" ] && [ "$d" != "/" ]; do
+    if [ -f "$d/pnpm-lock.yaml" ]; then echo "pnpm exec"; return; fi
+    if [ -f "$d/yarn.lock" ]; then echo "yarn"; return; fi
+    if [ -f "$d/bun.lockb" ] || [ -f "$d/bun.lock" ]; then echo "bunx"; return; fi
+    if [ -f "$d/package-lock.json" ]; then break; fi
+    d=$(dirname "$d")
+  done
+  echo "npx --no-install"
+}
+
 ts_js=$(printf '%s\n' "$edited" | grep -E '\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$' || true)
 if [ -n "$ts_js" ]; then
   while IFS= read -r f; do
     pkgdir=$(nearest_up "$f" package.json) || continue
+    run=$(runner_for "$pkgdir")
     if [ -f "$pkgdir/biome.json" ] || [ -f "$pkgdir/biome.jsonc" ]; then
-      (cd "$pkgdir" && timeout 60 npx --no-install @biomejs/biome check --write "$f" >/dev/null 2>&1) || true
+      (cd "$pkgdir" && timeout 60 $run biome check --write "$f" >/dev/null 2>&1) || true
     elif compgen -G "$pkgdir/.prettierrc*" >/dev/null 2>&1 \
       || compgen -G "$pkgdir/prettier.config.*" >/dev/null 2>&1; then
-      (cd "$pkgdir" && timeout 60 npx --no-install prettier --write "$f" >/dev/null 2>&1) || true
+      (cd "$pkgdir" && timeout 60 $run prettier --write "$f" >/dev/null 2>&1) || true
     fi
   done <<< "$ts_js"
 fi
@@ -45,11 +60,12 @@ if [ -n "$ts_only" ]; then
   tsdirs=$(while IFS= read -r f; do nearest_up "$f" tsconfig.json || true; done <<< "$ts_only" | sort -u)
   while IFS= read -r tdir; do
     [ -n "$tdir" ] || continue
-    if ! (cd "$tdir" && npx --no-install tsc --version >/dev/null 2>&1); then
+    trun=$(runner_for "$tdir")
+    if ! (cd "$tdir" && $trun tsc --version >/dev/null 2>&1); then
       tsc_missing="$tsc_missing $tdir"
       continue
     fi
-    out=$( (cd "$tdir" && timeout 240 npx --no-install tsc --noEmit --pretty false 2>&1) || true )
+    out=$( (cd "$tdir" && timeout 240 $trun tsc --noEmit --pretty false 2>&1) || true )
     [ -n "$out" ] || continue
     # only surface errors that mention files edited this session
     rel=$(printf '%s\n' "$ts_only" | while IFS= read -r f; do
@@ -69,7 +85,7 @@ reminder=""
 nfiles=$(printf '%s\n' "$edited" | grep -cE '\.(ts|tsx|js|jsx|py|go|rs|rb|swift|kt)$' 2>/dev/null || true)
 sensitive=$(printf '%s\n' "$edited" | grep -icE '(auth|login|session|payment|billing|secret|token|middleware|permission)' 2>/dev/null || true)
 tests_ran=true
-grep -qE '(vitest|jest|playwright|pytest|go test|cargo test|(npm|pnpm|yarn|bun)( run)? test)' "$dir/commands.txt" 2>/dev/null || tests_ran=false
+grep -qE '(vitest|jest|playwright|pytest|go test|cargo test|(npm|pnpm|yarn|bun)( run)? test|(make|just|task)[[:space:]]+[a-z-]*test)' "$dir/commands.txt" 2>/dev/null || tests_ran=false
 if [ "$tests_ran" = "false" ]; then
   if [ "${sensitive:-0}" -ge 1 ]; then
     reminder="Note: security-sensitive files (auth/payment/session/...) were edited but no test runner ran this session. Run the relevant tests before declaring this done."

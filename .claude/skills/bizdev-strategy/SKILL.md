@@ -113,7 +113,7 @@ After this document is complete, route downstream work as follows:
 
 ## Verification Gate
 
-Before delivery, run the **research-reviewer** agent on the draft. Pass it ONLY the draft and source list — not your reasoning. FAIL ⇒ fix and re-run. Never deliver an unverified strategy document.
+Before delivery, run the **research-reviewer** agent on the draft. Pass it ONLY the draft and source list — not your reasoning. FAIL ⇒ fix and re-run. Never deliver an unverified strategy document. If the document fails research-reviewer twice, STOP and surface the unresolved HIGH findings to the user — do not loop silently.
 
 ## Output Checklist
 

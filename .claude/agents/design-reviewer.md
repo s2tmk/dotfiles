@@ -1,6 +1,6 @@
 ---
 name: design-reviewer
-description: Evaluate UI implementation or design output against senior UX/UI standards — typography scale, spacing rhythm, color tone & manner, grid alignment, cognitive load, and generic-AI-UI anti-patterns. Invoke after building or restyling any user-facing screen, page, or landing section.
+description: Evaluate UI implementation or design output against senior UX/UI standards — typography scale, spacing rhythm, color tone & manner, grid alignment, cognitive load, and generic-AI-UI anti-patterns. Invoke after building or restyling any user-facing screen, page, or landing section. Keywords: デザインレビュー, 視覚品質評価, UI評価, 画面評価
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: sonnet
 ---
@@ -47,6 +47,10 @@ Any font size that does not match the 1.25-ratio scale defined in ux-ui-design (
 ### C. Off-Grid Spacing
 
 Any padding, margin, or gap value not on the 4px grid (i.e. not a multiple of 4px). Values like `p-[7px]`, `mt-[13px]`, `gap-[18px]` are violations. Tailwind's default scale (p-1=4px, p-2=8px, etc.) is on-grid; arbitrary values are not.
+
+### E. Missing Requirements Brief on New Screen or Feature
+
+The output is a NEW screen or feature and no `## Requirements Brief: …` exists in the material provided (the requirements-design gate was skipped) → FAIL with instruction to run requirements-design first.
 
 ### D. WCAG AA Contrast Failures
 

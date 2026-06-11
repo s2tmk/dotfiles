@@ -25,6 +25,10 @@ A request like "add CSV export" is a proposed solution, not a requirement. The r
 
 ---
 
+## Intake from bizdev-strategy
+
+If this skill is triggered from a bizdev-strategy handoff, load that document's Section 5 feature proposals and Section 2 evidence first; every feature in the Requirements Brief must cite its evidence source from that document. If a bizdev-strategy document exists for this product, do not accept undocumented feature requests.
+
 ## Discovery Question Checklist
 
 Work through these before writing a line of design or code. Not every question applies to every request — use judgment, but default to asking rather than assuming.

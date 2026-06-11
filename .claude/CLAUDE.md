@@ -42,10 +42,14 @@
 - 要件定義・仕様策定・新機能・新プロダクト (feature/spec request) → requirements-design で
   潜在要求を確認してから設計
 - UI・画面設計・デザインシステム・LP・ダッシュボード (UI/screen design) → ux-ui-design
-  （新規画面は requirements-design 先行）。Figma 操作は figma スキル群
-- 市場調査・競合分析・市場規模 (market research) → market-research（調査実行は deep-research に委譲）。
-  事業計画・GTM・戦略 (business plan / go-to-market) → bizdev-strategy。
-  投資家資料・ピッチ (pitch deck) → investor-materials
+  （新規画面は requirements-design 先行）。Figma 操作は figma スキル群。
+  高リスク画面（LP・オンボーディング・主要プロダクト画面）はコード直書き前に
+  Figma ラウンドトリップ（figma-use → figma-generate-design → 実装）を踏む
+- 市場調査・競合分析・市場規模 (market research / competitive analysis / due diligence)
+  → market-research（調査実行は deep-research に委譲）。
+  事業計画・GTM・戦略 (business plan / go-to-market) → bizdev-strategy
+  ※market-research の Evidence が前提 — なければ先に実行。
+  投資家資料・ピッチ (pitch deck / investor materials) → investor-materials
 - インフラ・AWS/GCP/Cloudflare・Terraform → cloud-infra
 - 該当スキルが見つからない未知のタスク → find-skills で探してから着手
 

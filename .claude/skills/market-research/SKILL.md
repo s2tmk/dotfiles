@@ -1,6 +1,6 @@
 ---
 name: market-research
-description: Market research producing evidence-grade outputs: TAM/SAM/SOM sizing triangulated against government statistics, industry reports, and academic literature; competitive analysis; investor due diligence; technology scans. Delivers decisions, not summaries. Load when the user needs market sizing, competitive intelligence, fund research, or thesis validation at academic-paper rigor. Keywords: 市場調査, 競合分析, 市場規模, TAM, デューデリジェンス.
+description: Market research producing evidence-grade outputs: TAM/SAM/SOM sizing triangulated against government statistics, industry reports, and academic literature; competitive analysis; investor due diligence; technology scans. Delivers decisions, not summaries. Load when the user needs market sizing, competitive intelligence, fund research, or thesis validation at academic-paper rigor. Keywords: 市場調査, 競合分析, 市場規模, TAM, デューデリジェンス, market sizing, competitive analysis, competitive intelligence, market entry, due diligence.
 origin: ECC
 ---
 
@@ -160,7 +160,7 @@ Default structure:
 
 ## Verification Gate
 
-Before delivery, run the **research-reviewer** agent on the draft. Pass it ONLY the draft and source list — not your reasoning. FAIL => fix and re-run. Never deliver unverified numbers.
+Before delivery, run the **research-reviewer** agent on the draft. Pass it ONLY the draft and source list — not your reasoning. FAIL => fix and re-run. Never deliver unverified numbers. If the document fails research-reviewer twice, STOP and surface the unresolved HIGH findings to the user — do not loop silently.
 
 ## Quality Gate
 
