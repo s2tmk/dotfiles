@@ -1,0 +1,82 @@
+#!/bin/bash
+# Stop gate: batch format + typecheck of files edited this session.
+# Modes via HARNESS_STOP_GATE: block (default) | strict (tests required too) | off
+# Loop safety: exits 0 when stop_hook_active; accumulator is clear-on-read,
+# so a block fires at most once per batch of edits.
+set -u
+source "$(dirname "$0")/lib.sh" || exit 0
+
+GATE_MODE="${HARNESS_STOP_GATE:-block}"
+[ "$GATE_MODE" = "off" ] && exit 0
+
+read_hook_input
+[ "$(hook_field '.stop_hook_active')" = "true" ] && exit 0
+
+sid=$(hook_field '.session_id')
+dir=$(session_dir "$sid")
+[ -n "$dir" ] || exit 0
+list="$dir/edited.txt"
+[ -s "$list" ] || exit 0
+
+# clear-on-read: keep only files that still exist, then drop the accumulator
+edited=$(sort -u "$list" | while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done)
+rm -f "$list" 2>/dev/null
+[ -n "$edited" ] || exit 0
+
+# --- 1) Format (never blocks; tool missing => silent skip) -------------------
+ts_js=$(printf '%s\n' "$edited" | grep -E '\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$' || true)
+if [ -n "$ts_js" ]; then
+  while IFS= read -r f; do
+    pkgdir=$(nearest_up "$f" package.json) || continue
+    if [ -f "$pkgdir/biome.json" ] || [ -f "$pkgdir/biome.jsonc" ]; then
+      (cd "$pkgdir" && timeout 60 npx --no-install @biomejs/biome check --write "$f" >/dev/null 2>&1) || true
+    elif compgen -G "$pkgdir/.prettierrc*" >/dev/null 2>&1 \
+      || compgen -G "$pkgdir/prettier.config.*" >/dev/null 2>&1; then
+      (cd "$pkgdir" && timeout 60 npx --no-install prettier --write "$f" >/dev/null 2>&1) || true
+    fi
+  done <<< "$ts_js"
+fi
+
+# --- 2) Typecheck (blocking) --------------------------------------------------
+errors=""
+ts_only=$(printf '%s\n' "$edited" | grep -E '\.(ts|tsx|mts|cts)$' || true)
+if [ -n "$ts_only" ]; then
+  tsdirs=$(while IFS= read -r f; do nearest_up "$f" tsconfig.json || true; done <<< "$ts_only" | sort -u)
+  while IFS= read -r tdir; do
+    [ -n "$tdir" ] || continue
+    out=$( (cd "$tdir" && timeout 240 npx --no-install tsc --noEmit --pretty false 2>&1) || true )
+    [ -n "$out" ] || continue
+    # only surface errors that mention files edited this session
+    rel=$(printf '%s\n' "$ts_only" | while IFS= read -r f; do
+      [[ "$f" == "$tdir"/* ]] && printf '%s\n' "${f#"$tdir"/}" || true
+    done)
+    [ -n "$rel" ] || continue
+    hits=$(printf '%s\n' "$out" | grep -F -f <(printf '%s\n' "$rel") 2>/dev/null | head -40 || true)
+    [ -n "$hits" ] && errors="${errors}
+[tsconfig: $tdir]
+$hits"
+  done <<< "$tsdirs"
+fi
+
+# --- 3) Test reminder (warn; blocks only in strict mode) ----------------------
+reminder=""
+nfiles=$(printf '%s\n' "$edited" | grep -cE '\.(ts|tsx|js|jsx|py|go|rs|rb|swift|kt)$' 2>/dev/null || true)
+if [ "${nfiles:-0}" -ge 3 ] && ! grep -qE '(vitest|jest|playwright|pytest|go test|cargo test|(npm|pnpm|yarn|bun)( run)? test)' "$dir/commands.txt" 2>/dev/null; then
+  reminder="Note: ${nfiles} source files were edited but no test runner ran this session. Run the relevant tests before declaring this done."
+fi
+
+if [ -n "$errors" ]; then
+  {
+    echo "Stop gate: TypeScript errors in files you edited this session. Fix them before finishing:"
+    echo "$errors"
+    [ -n "$reminder" ] && echo "$reminder"
+  } >&2
+  exit 2
+fi
+
+if [ -n "$reminder" ] && [ "$GATE_MODE" = "strict" ]; then
+  echo "Stop gate (strict): $reminder" >&2
+  exit 2
+fi
+
+exit 0

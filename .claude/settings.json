@@ -3,9 +3,7 @@
   "env": {
     "CLAUDE_CODE_NO_FLICKER": "1",
     "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "512000",
-    "ECC_GATEGUARD": "off",
-    "ECC_CONTEXT_MONITOR_COST_WARNINGS": "false",
-    "ECC_DISABLED_HOOKS": "stop:cost-tracker"
+    "HARNESS_STOP_GATE": "block"
   },
   "permissions": {
     "allow": [
@@ -24,14 +22,14 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "claude-opus-4-8",
   "statusLine": {
     "type": "command",
     "command": "bash ~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
     "codex@openai-codex": true,
-    "ecc@ecc": true,
+    "ecc@ecc": false,
     "figma@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
@@ -55,6 +53,75 @@
     }
   },
   "language": "japanese",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/dotfiles/.claude/hooks/pre-config-guard.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/dotfiles/.claude/hooks/post-edit-accumulate.sh\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/dotfiles/.claude/hooks/post-bash-track.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/dotfiles/.claude/hooks/stop-verify.sh\"",
+            "timeout": 300
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/dotfiles/.claude/hooks/session-start.sh\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$HOME/dotfiles/.claude/hooks/pre-compact-save.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
   "sandbox": {
     "enabled": true,
     "allowUnsandboxedCommands": false,

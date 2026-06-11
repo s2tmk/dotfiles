@@ -1,100 +1,51 @@
-## Workflow Orchestration
+# Operating Rules
 
-### 1. Plan Node Default
-
-- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
-- If something goes sideways, STOP and re-plan immediately – don't keep pushing
-- Use plan mode for verification steps, not just building
-- Write detailed specs upfront to reduce ambiguity
-- On Opus 4.6+: plan scope and intent, NOT granular sprint-level decomposition — the model can sustain coherent execution for 2+ hours without step-by-step scaffolding
-
-### 2. Subagent Strategy
-
-- Use subagents liberally to keep main context window clean
-- Offload research, exploration, and parallel analysis to subagents
-- For complex problems, throw more compute at it via subagents
-- One task per subagent for focused execution
-
-### 3. Generator-Evaluator Separation (GAN Pattern)
-
-Self-evaluation is unreliable — agents identify problems then rationalize them as non-critical. Separate generation from evaluation:
-
-- **Generator**: The main agent (or subagent) doing the work
-- **Evaluator**: An independent subagent that judges the output without seeing the generation process
-- Use ecc:code-reviewer / ecc:security-reviewer / ecc:typescript-reviewer as evaluators — they must NOT receive the generator's self-assessment
-- Evaluator must have hard thresholds: any criterion below threshold = fail + detailed feedback
-- Anti-pattern to watch for: evaluator identifies real issues then says "overall this is acceptable" — configure evaluator prompts to forbid rationalization
-
-When to use full GAN pattern (cost-justified):
-- Tasks exceeding the model's reliable baseline (multi-file features, architecture changes)
-- Security-sensitive code (auth, payments, user data)
-- UI/UX work requiring subjective quality judgment
-
-When single-pass self-check is sufficient:
-- Simple bug fixes with binary pass/fail verification (tests pass or don't)
-- Single-file edits with clear correctness criteria
-- Documentation updates
-
-### 4. Self-Improvement Loop
-
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
-- Write rules for yourself that prevent the same mistake
-- Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
-
-### 5. Verification Before Done
-
-- Never mark a task complete without proving it works
-- Diff behavior between main and your changes when relevant
-- For non-trivial work: spawn an independent evaluator subagent instead of self-assessing
-- Run tests, check logs, demonstrate correctness
-- Evaluator must test deeply — click through nested features, not just golden path
-
-### 6. Demand Elegance (Balanced)
-
-- For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes – don't over-engineer
-- Challenge your own work before presenting it
-
-### 7. Autonomous Bug Fixing
-
-- When given a bug report: just fix it. Don't ask for hand-holding
-- Point at logs, errors, failing tests – then resolve them
-- Zero context switching required from the user
-- Go fix failing CI tests without being told how
-
-### 8. Context Window Management
-
-Context degradation is the #1 failure mode in long-running sessions:
-
-- **Monitor context usage**: When approaching ~70% of context, proactively decide: compact or reset
-- **Prefer context reset over compaction** for multi-file features: write structured handoff artifacts (what's done, what's next, key decisions, file paths) then start fresh
-- **Use compaction** for single-concern sessions where earlier context is summarizable without loss
-- **Handoff artifacts live in files**, not conversation: one agent writes, the next reads — this maintains faithfulness to specifications
-- **Never push through context anxiety**: If you feel pressure to wrap up prematurely, that's the signal to reset context, not to rush
-
-### 9. Harness Assumption Auditing
-
-Every rule, hook, and workflow in this configuration encodes an assumption about what the model can't do reliably on its own. These assumptions decay as models improve.
-
-- When a new model is in use: question whether each constraint is still load-bearing
-- If a guardrail fires but feels unnecessary, flag it — don't just work around it
-- Prefer removing constraints that the model handles natively over adding more scaffolding
-- The design space moves, not shrinks: freed capacity should enable more ambitious work, not just less overhead
-
-## Task Management
-
-1. **Plan First**: Write plan to `tasks/todo.md` — scope and intent over granular checkboxes
-2. **Verify Plan**: Check in before starting implementation
-3. **Track Progress**: Mark items complete as you go
-4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
-7. **Long runs (30min+)**: Skip per-step tracking; do a single-pass evaluation at the end
+応答は日本語。コード・コミットメッセージ・識別子は英語。
 
 ## Core Principles
+- **Simplicity First**: 動く最小の変更を選ぶ。賢さより明快さ。実証された必要のない抽象化を
+  先回りで作らない（YAGNI）。繰り返しが現実になってから共通化する（DRY）。
+- **Root Cause, No Laziness**: 症状ではなく根本原因を直す。暫定対応で済ませない。
+  やむを得ず暫定にする場合は理由と恒久対応を明記してユーザーに伝える。基準は常にシニアエンジニア。
+- **Minimal Impact**: 必要な箇所だけに触れる。無関係なリファクタ・整形・リネームを混ぜない。
+- **Demand Elegance**: 非自明な変更の完了前に自問する —「今の知識で最初から書くなら同じ設計か？」
+  ハックだと感じたら、エレガントな解に書き直してから提示する（自明な修正には適用しない）。
 
-- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
-- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
-- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+## Workflow
+- 3ステップ以上 or アーキテクチャ判断を含むタスク → まず plan mode。計画は tasks/todo.md へ
+  （スコープと意図を書く。マイクロステップ分解はしない）。自明な修正は計画不要、即実行。
+- 新機能・プロダクト開発の依頼では、要求の言い換えだけで実装に入らない: ペルソナ・解くべき問題・
+  スコープ境界・非機能要件・エッジケース・成功基準の不明点を洗い出し、重要な分岐はユーザーに
+  質問してから設計する（手順は requirements-design スキル）。
+- 現実が計画から乖離したら STOP して再計画。壊れた計画のまま押し切らない。
+- タスク完了 = 証明済みのみ。テスト/ビルド/実行結果のコマンドと出力を引用する。
+  「動くはず」は完了ではない。Stop ゲートは型しか見ない — 挙動の検証は自分の責任。
+
+## Delegation — メインコンテキストを汚さない
+- コードベース探索・調査・ログ精査 → サブエージェントへ。持ち帰るのは要約とパス。
+  パス+要約で足りる場面で50行超を本文に貼らない。
+- サブエージェント1体につき1タスク。独立な調査は並列起動。
+
+## Independent evaluation（生成者 ≠ 評価者）
+- 複数ファイル変更・アーキテクチャ変更・auth/決済/個人情報に触れる変更の後:
+  code-reviewer（後者は security-reviewer も）を起動。渡すのは変更ファイル一覧と要件のみ。
+  自己評価は絶対に渡さない。React/UI の変更は react-reviewer。
+- 評価が FAIL → 修正して再評価。指摘の値切り交渉をしない。
+- 重要な設計判断は codex review で他ベンダー第二意見。
+- 省略可: 単一ファイル修正で合否が二値検証できるもの、ドキュメント。
+
+## Context management
+- コンテキスト約70%で tasks/handoff.md（完了/次/判断/パス）を書いて /clear。
+  複数ファイル作業は compaction より再起動を優先。
+- 計画・調査結果・引き継ぎは会話ではなくファイルに置く。解決済みの handoff は削除する。
+
+## Feedback
+- ユーザーに修正されたら必ず: プロジェクトの MEMORY.md に再発防止ルールを一行追記
+  （経緯ではなくルール）。横断的パターンは /learn。
+
+## Hard rules
+- lint/型/テスト設定の弱体化で検査を通さない — コードを直す（フックが強制）。
+- 明示依頼なしに commit/push しない。--force と --no-verify は常に禁止。
+- シークレットをコード・ログ・会話に出さない。
+- 作る前に探す: 既存コード・ライブラリレジストリを検索してから新規実装。
+- 破壊的操作（rm -rf, DROP TABLE, force-push, データ削除）はユーザー確認必須。
