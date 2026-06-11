@@ -1,79 +1,126 @@
 # Claude Code Harness v2
 
-2026-06-12 に ECC フルバンドル構成から全面移行した自前ハーネス。
-設計目標: **(1) 常駐トークンの最小化（レート制限対策） (2) 下位モデル（Opus/Sonnet）でも
-Fable 級の成果を出す決定論的品質保証 (3) コンテキスト管理・フィードバックループの整備。**
+An owned harness that fully replaced the ECC bundle on 2026-06-12.
+Design goals: **(1) minimize always-resident tokens (rate-limit pressure),
+(2) deterministic quality assurance so lower-tier models (Opus/Sonnet) deliver
+Fable-tier results, (3) solid context management and feedback loops.**
 
-## 3層アーキテクチャ
+Language policy: instruction files that Claude reads (CLAUDE.md, skills, agents,
+rules, hook-injected messages) are written in **English** to avoid translation
+drift. Japanese appears only as (a) trigger keywords that match the user's
+Japanese prompts, (b) deliverable labels such as 検証済み/推定, and (c) verbatim
+quotes of the user's own standards. Responses to the user are Japanese
+(`"language": "japanese"` in settings.json).
 
-| 層 | 内容 | 実体 |
+## Repository layout & installation
+
+This directory is versioned inside the `dotfiles` repo. `~/.claude` is NOT a
+git repo — it holds runtime state (history, projects/, plugins/, session data)
+that must never be committed. Run `~/dotfiles/install.sh` to symlink every
+top-level entry here into `~/.claude` (idempotent: re-points stale links,
+backs up real files as `*.bak.<timestamp>`). Re-run after pulling when new
+top-level entries appear. `settings.local.json` stays machine-local.
+
+Note: hook commands in settings.json reference `$HOME/dotfiles/.claude/hooks/`
+directly, so hooks work even before the `hooks` symlink exists.
+
+## 3-layer architecture
+
+| Layer | Role | Implementation |
 |---|---|---|
-| L1 常駐コア | ルーティング判断のみ（いつ計画/委任/評価/handoff するか） | `CLAUDE.md`（約55行） |
-| L2 オンデマンド知識 | ドメイン別パターン。frontmatter のみ常駐、本文は呼ばれた時だけロード | `skills/` 18個 |
-| L3 決定論的強制 | モデル能力に依存しない品質ゲート | `hooks/` 6本 + `agents/` 評価者5体 + codex 第二意見 |
+| L1 always-on core | Routing decisions only (when to plan / delegate / evaluate / hand off) | `CLAUDE.md` (~80 lines) |
+| L2 on-demand knowledge | Domain patterns; only frontmatter is resident, bodies load when invoked | `skills/` (19) |
+| L3 deterministic enforcement | Quality gates independent of model tier | `hooks/` (7) + `agents/` evaluators (7) + codex second opinion |
 
-設計原則: **散文ルールの遵守率はモデル能力に比例するが、フックは100%発火する。**
-品質保証はできる限り L3（フック・独立評価）に置き、L1 には「ルーティング判断」だけを残す。
+Design principle: **compliance with prose rules scales with model capability,
+but hooks fire 100% of the time.** Put quality assurance in L3 wherever
+possible; L1 carries routing judgment only.
 
-## hooks/ — 決定論的ゲート
+## hooks/ — deterministic gates
 
-| フック | イベント | 動作 |
+| Hook | Event | Behavior |
 |---|---|---|
-| `pre-config-guard.sh` | PreToolUse (Edit/Write) | lint/型設定の弱体化を **ブロック**（新規作成は許可） |
-| `post-edit-accumulate.sh` | PostToolUse (Edit/Write) | 編集ファイルを session tmp に記録 |
-| `post-bash-track.sh` | PostToolUse (Bash) | 実行コマンド記録（テスト実行検知用） |
-| `stop-verify.sh` | Stop | 編集ファイルを format + `tsc --noEmit`。型エラーで **応答終了をブロック**し差し戻し。テスト未実行は警告 |
-| `session-start.sh` | SessionStart | `tasks/handoff.md`（7日以内・上限2KB）だけを注入 |
-| `pre-compact-save.sh` | PreCompact | git status + 編集ファイル一覧を handoff.md に退避 |
+| `prompt-router.sh` | UserPromptSubmit | Injects a one-line skill-routing reminder on JA/EN keyword match (model-independent skill discovery) |
+| `pre-config-guard.sh` | PreToolUse (Edit/Write) | **Blocks** weakening lint/type configs — including the create-a-looser-new-config loophole |
+| `post-edit-accumulate.sh` | PostToolUse (Edit/Write) | Records edited files into session scratch |
+| `post-bash-track.sh` | PostToolUse (Bash) | Records executed commands (test-run detection) |
+| `stop-verify.sh` | Stop | Formats + `tsc --noEmit` on edited files; **blocks the response on type errors** and bounces them back. Missing tsc surfaces once instead of passing silently. Test reminder (1 file for auth/payment paths, 3 otherwise). pnpm/yarn/bun runner detection with monorepo lockfile walk-up |
+| `session-start.sh` | SessionStart | Injects `tasks/handoff.md` only (≤7 days old, ≤2KB cap); prunes stale scratch dirs |
+| `pre-compact-save.sh` | PreCompact | Saves git status + edited-file list into handoff.md |
 
-**キルスイッチ:**
-- `HARNESS_HOOKS=off` — 全フック即時無効（緊急用）
-- `HARNESS_STOP_GATE=off|block|strict` — Stop ゲートのみ制御（既定 block、strict はテスト必須）
-- 回帰テスト: `bash hooks/run-tests.sh`（10ケース）
+**Kill switches:**
+- `HARNESS_HOOKS=off` — disables every hook instantly (emergency)
+- `HARNESS_STOP_GATE=off|block|strict` — Stop gate only (default block; strict also requires tests)
+- Regression tests: `bash hooks/run-tests.sh` (14 cases)
 
-**誤爆防止設計:** 全フックは内部エラー時 exit 0 / Stop ゲートは `stop_hook_active` チェック +
-accumulator の clear-on-read（同一編集バッチにつきブロック最大1回）。
+**No-false-block design:** every hook exits 0 on internal error; the Stop gate
+checks `stop_hook_active` and uses a clear-on-read accumulator (at most one
+block per edit batch).
 
-## agents/ — 独立評価者（GANパターン）
+## agents/ — independent evaluators (GAN pattern)
 
-code-reviewer / security-reviewer / react-reviewer / build-error-resolver / e2e-runner。
-全て `model: sonnet` 固定（レート制限の安い枠で評価を回す。独立性こそが価値でありモデル階級ではない）。
-評価者には**変更ファイル一覧と要件のみ**を渡す。生成者の自己評価を渡さない。
-CRITICAL/HIGH 1件でも verdict FAIL、「全体としては許容」という合理化は禁止。
+code-reviewer / security-reviewer / react-reviewer / design-reviewer /
+research-reviewer / build-error-resolver / e2e-runner. All pinned to
+`model: sonnet` (evaluation burns the cheaper rate window; independence — not
+model tier — is what makes the loop work). Evaluators receive **only the
+changed-file list and requirements**, never the generator's self-assessment.
+Any CRITICAL/HIGH finding ⇒ verdict FAIL; "acceptable overall" rationalization
+is forbidden. design-reviewer FAILs generic-AI-template UI on primary surfaces;
+research-reviewer refutes unsourced numbers (two FAILs ⇒ stop and surface to
+the user).
 
-## 出典と経緯
+## Provenance
 
-- ベンダリング元: ECC plugin `2.0.0-rc.1`（cache: `~/.claude/plugins/cache/ecc/ecc/2.0.0-rc.1/`）。
-  各ファイルに `Vendored from ECC 2.0.0-rc.1` コメントあり。大幅に刈り込み・再構成済み。
-- ECC プラグインは `settings.json` で無効化（`"ecc@ecc": false`）。理由: 249スキル一覧
-  （説明文付き）が毎セッション注入される常駐税はプラグイン無効化でしか消えないため。
-- 廃止した ECC 機構: 観測系フック（continuous-learning/governance/metrics/cost-tracker）、
-  memory MCP（ネイティブ memory ディレクトリで代替）、sequential-thinking MCP（extended thinking で代替）、
-  github MCP（`gh` CLI で代替）、exa MCP（WebSearch で代替）。
-- MCP は user スコープの playwright + context7 のみ（旧 `/Users/tomokis` プロジェクト限定登録は移行済み）。
-- `~/.agents/skills/` は `~/.agents/skills.disabled/` にリネーム（1週間問題なければ削除可）。
+- Vendored from ECC plugin `2.0.0-rc.1` (cache:
+  `~/.claude/plugins/cache/ecc/ecc/2.0.0-rc.1/`), heavily trimmed and
+  restructured; each vendored file carries a `Vendored from ECC 2.0.0-rc.1`
+  comment.
+- The ECC plugin is disabled (`"ecc@ecc": false` in settings.json). Reason: the
+  ~249-skill always-on listing tax only disappears when the plugin is off.
+- Dropped ECC machinery: observation hooks (continuous-learning / governance /
+  metrics / cost-tracker), memory MCP (native memory dir), sequential-thinking
+  MCP (extended thinking), github MCP (`gh` CLI), exa MCP (WebSearch).
+- MCP servers: user-scoped playwright + context7 only (migrated from the old
+  `/Users/tomokis` project-local registration), plus the figma and codex plugins.
+- `~/.agents/skills/` was renamed to `~/.agents/skills.disabled/`
+  (delete after a safe week).
 
-## 計測（/context で記録すること）
+## Measurements (record via /context)
 
-| 指標 | v1 (ECC full) | v2 | 備考 |
+| Metric | v1 (ECC full) | v2 | Notes |
 |---|---|---|---|
-| 常駐散文 (CLAUDE.md+rules) | 約21.5KB | 約4KB | CLAUDE.md 55行 + paths限定rules 2本 |
-| スキル一覧エントリ | 249 (ECC) + 約25 (~/.agents) | 18 | 説明文も1文に圧縮 |
-| フック | 28本 (node bootstrap 約1.5KB/発火) | 6本 (bash+jq) | 観測系全廃 |
-| MCPサーバー | 6 (ECC) + 重複2 | 2 + figma/codex plugin | |
-| /context 実測 (起動時) | ___ tokens | ___ tokens | 新セッションで記録 |
+| Always-on prose (CLAUDE.md + rules) | ~21.5KB | ~5KB | CLAUDE.md ~80 lines + 2 path-scoped rules |
+| Skill list entries | 249 (ECC) + ~25 (~/.agents) | 19 | descriptions compressed to one sentence |
+| Hooks | 28 (node bootstrap ~1.5KB/firing) | 7 (bash+jq) | observation hooks removed |
+| MCP servers | 6 (ECC) + 2 duplicates | 2 + figma/codex plugins | |
+| /context at session start | ___ tokens | ___ tokens | record in a fresh session |
 
-## 既定モデル運用
+## Default model policy
 
-- 既定: `claude-opus-4-8`（effort xhigh）。難タスク（長時間自律・曖昧仕様の解釈）のみ `/model` で Fable 指名。
-- ハーネスで埋まるのは「検証忘れ・指示逸脱・コンテキスト劣化」起因の失敗。モデルの絶対能力差は残る。
+- Default: `claude-opus-4-8` (effort xhigh). Switch to Fable via `/model` only
+  for long autonomous runs or ambiguous-spec interpretation.
+- The harness closes failures caused by skipped verification, instruction
+  drift, and context decay. Absolute capability gaps remain — that is what the
+  Fable escape hatch is for.
 
-## 改善ループ（Harness Assumption Auditing）
+## Self-evaluation scores (2026-06-12)
 
-このハーネスの全ルール・フックは「モデルが単体では確実にできないこと」の仮説をエンコードしている。
-仮説はモデルの進化で陳腐化する。
+Independent evaluator agents (no self-assessment passed in, rationalization
+forbidden), iterated until >90 in all domains:
+software development **91** / UX-UI design **93** / business development **93**.
+Remaining backlog: deterministic gates for non-TS languages, pixel-level visual
+verification, Figma round-trip as an enforced (not advisory) gate, and a live
+Opus field trial.
 
-- 新モデル導入時: 各制約がまだ有効か問い直す。不要に発火するガードレールは回避せず報告・削除する
-- ユーザー修正を受けたら `/learn`（→ MEMORY.md or skills/learned/）
-- 四半期ごと: `/context` でトークン監査、learned/ スキルの棚卸し
-- 制約を増やすより、モデルが自力でできるようになった制約を削る方を優先する
+## Improvement loop (harness assumption auditing)
+
+Every rule and hook encodes an assumption about what a model cannot do
+reliably on its own; assumptions decay as models improve.
+
+- When adopting a new model: re-question whether each constraint is still
+  load-bearing. A guardrail that fires needlessly should be reported and
+  removed, not worked around.
+- After any user correction: `/learn` (→ MEMORY.md or skills/learned/).
+- Quarterly: token audit via `/context`, prune skills/learned/.
+- Prefer deleting constraints the model now handles natively over adding
+  scaffolding.

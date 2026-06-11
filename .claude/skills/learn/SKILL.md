@@ -3,43 +3,45 @@ name: learn
 description: Distill a correction or hard-won insight from the current session into a one-line prevention rule, saved to the project MEMORY.md or promoted to skills/learned/ when it applies across projects. Invoke after a user correction, a repeated mistake, or when the user says /learn.
 ---
 
-# Learn — フィードバックの永続化
+# Learn — persist feedback as prevention rules
 
-セッション中の修正・発見を、次回以降の再発防止ルールに変換して保存する。
+Convert a correction or discovery from this session into a rule that prevents recurrence.
 
-## 手順
+## Procedure
 
-1. **何が起きたかを1文で特定する**: ユーザーの修正、誤った仮定、繰り返したミス。
-   ストーリーではなく「次に何を変えるか」を書く。
-2. **保存先を判定する**:
-   - このプロジェクト固有（用語、設計判断、データソース、レビュー手順）
-     → プロジェクトの `MEMORY.md` に一行追記（既存形式に合わせる）
-   - 事業開発・リサーチ系の教訓（誤ったソース選定、推定の未ラベル、根拠のない提案）
-     → プロジェクト MEMORY.md の `## Research Lessons` 配下へ（市場の事実はプロジェクト固有なため）
-   - プロジェクト横断で再利用できるパターン（ツールの落とし穴、ワークフロー改善）
-     → `~/.claude/skills/learned/<kebab-name>/SKILL.md` を新規作成
-3. **ルール形式で書く**: 「Xのときは必ずY」「Zをしない — 代わりにW」。
-   理由が自明でなければ括弧で一言添える。
-4. **重複チェック**: 既存の MEMORY.md / learned/ に同じ趣旨があれば、新規作成せず
-   既存の記述を強化・修正する。誤っていた古いルールは削除する。
+1. **State what happened in one sentence**: the user's correction, a wrong assumption, a
+   repeated mistake. Write what to change next time — not the story.
+2. **Decide where it belongs**:
+   - Project-specific (terminology, design decisions, data sources, review procedures)
+     → append one line to the project's `MEMORY.md`, matching its existing format
+   - Bizdev/research lessons (wrong source selection, unlabeled estimates, recommendations
+     without evidence) → under `## Research Lessons` in the project `MEMORY.md`
+     (market facts are project-specific)
+   - Cross-project reusable patterns (tool pitfalls, workflow improvements)
+     → create `~/.claude/skills/learned/<kebab-name>/SKILL.md`
+3. **Write it as a rule**: "When X, always Y" / "Never Z — do W instead".
+   Add a one-phrase reason in parentheses unless it is obvious.
+4. **Check for duplicates**: if MEMORY.md / learned/ already covers the same point,
+   strengthen or correct the existing entry instead of adding a new one. Delete rules
+   that turned out to be wrong.
 
-## learned/ スキルの形式
+## learned/ skill format
 
 ```markdown
 ---
 name: <kebab-case-name>
-description: <いつ発動すべきかが分かる具体的なトリガー語入りの一文>
+description: <one sentence with concrete trigger words that make clear when this fires>
 ---
 
 # <Title>
 
-**Rule**: <一行のルール>
-**Why**: <一行の理由>
-**Example**: <該当する状況の最小例>
+**Rule**: <one-line rule>
+**Why**: <one-line reason>
+**Example**: <minimal example of the situation it applies to>
 ```
 
-## 品質基準
+## Quality bar
 
-- 保存する価値があるのは「次回の行動を変えるもの」だけ。感想・経緯・自明な一般論は保存しない。
-- 1ファイル1ルール。肥大化したら分割する。
-- 3ヶ月使われなかった learned スキルは削除候補（レビューして消す）。
+- Save only what changes future behavior. No impressions, narratives, or obvious generalities.
+- One rule per file. Split it when it grows.
+- A learned skill unused for 3 months is a deletion candidate — review it and remove it.
