@@ -28,7 +28,7 @@ Each hypothesis must be falsifiable: state what evidence would prove it wrong. D
 
 ## Section 2 — Evidence
 
-**Never invent numbers in this section.** All market sizing and competitive facts come from the **market-research** skill. If that output does not exist, invoke market-research first and return here once it does.
+**Never invent numbers in this section.** All market sizing and competitive facts come from the **market-research** skill. Gate: if no market-research output exists (as a file or in this conversation), **STOP — do not estimate or paraphrase market data.** Run market-research first, then return here.
 
 Structure the evidence as:
 
@@ -110,6 +110,10 @@ After this document is complete, route downstream work as follows:
 - **First build slice** → **requirements-design** skill. Use the Phase 1 feature proposals and open questions as the starting input. requirements-design will surface personas, scope boundaries, edge cases, and acceptance criteria before implementation begins.
 
 ---
+
+## Verification Gate
+
+Before delivery, run the **research-reviewer** agent on the draft. Pass it ONLY the draft and source list — not your reasoning. FAIL ⇒ fix and re-run. Never deliver an unverified strategy document.
 
 ## Output Checklist
 

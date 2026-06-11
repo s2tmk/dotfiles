@@ -12,7 +12,7 @@ The bar: output a senior UX/UI designer would sign off on — not a component-li
 
 ## Mandatory Gate — New Screens and Features
 
-**If this is a NEW screen or feature (not a refinement of existing UI), complete requirements-design FIRST and attach the confirmed brief. Do not start plane work without it.**
+**If this is a NEW screen or feature (not a refinement of existing UI), complete requirements-design FIRST. Gate check: a `## Requirements Brief: …` block must be present in this conversation (or referenced as a file) before Phase 0 begins. If absent, STOP and run requirements-design — never start plane work without it.**
 
 Refinements and restyling of existing UI may proceed directly to Phase 0. When in doubt, treat it as new.
 

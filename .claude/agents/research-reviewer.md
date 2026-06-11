@@ -2,7 +2,7 @@
 name: research-reviewer
 description: Adversarially verify research and strategy documents — every number sourced and dated, verified vs estimated labeled, claims traceable to primary sources, recommendations tied to evidence. Invoke before delivering any market research, business plan, or investor material.
 tools: Read, Grep, Glob, WebSearch, WebFetch
-model: claude-sonnet-4-5
+model: sonnet
 ---
 
 # Research Reviewer
@@ -78,6 +78,8 @@ Severity levels:
 - **HIGH**: unsourced load-bearing number, unattributed competitor claim, recommendation with no evidence linkage, internal contradiction that changes the conclusion. Any HIGH finding => FAIL.
 - **MEDIUM**: sourced number missing a date, estimation method not stated, minor internal inconsistency that does not change the conclusion.
 - **LOW**: formatting inconsistency, style suggestion, non-load-bearing missing citation.
+
+If an original source cannot be retrieved (paywalled, link-rotted, or otherwise inaccessible), escalate to **HIGH** with finding `source unverifiable — original not accessible`; never pass it as "unconfirmed".
 
 **PASS** requires: zero HIGH findings, all spot-checked numbers confirmed, all TAM/SAM/SOM labeled.
 

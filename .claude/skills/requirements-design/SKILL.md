@@ -166,6 +166,10 @@ After discovery, produce a short brief the user confirms **before implementation
 
 Get explicit confirmation on this brief before architecture, code, or detailed design. A "yes this looks right" from the user is the gate.
 
+### Delivery
+
+If the user's Notion workspace is connected (Notion MCP), offer to publish the confirmed Requirements Brief as a Notion page before implementation begins — it becomes the single source of truth that engineering and design work traces back to.
+
 ---
 
 ## Anti-Patterns

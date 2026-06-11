@@ -29,7 +29,9 @@
 ## Independent evaluation（生成者 ≠ 評価者）
 - 複数ファイル変更・アーキテクチャ変更・auth/決済/個人情報に触れる変更の後:
   code-reviewer（後者は security-reviewer も）を起動。渡すのは変更ファイル一覧と要件のみ。
-  自己評価は絶対に渡さない。React/UI の変更は react-reviewer。
+  自己評価は絶対に渡さない。React の変更は react-reviewer。
+- ユーザーが目にする画面・ページを作成/再スタイルしたら（React 以外の HTML/CSS や Figma 出力も含む）
+  design-reviewer で視覚品質を独立評価。FAIL なら出荷しない。
 - 評価が FAIL → 修正して再評価。指摘の値切り交渉をしない。
 - 他ベンダー第二意見（codex review）の発動条件: 新しい外部依存の追加 / 認証フロー設計 /
   DB スキーマ変更 / サービス分割・アーキテクチャ選定。該当したら起動する。
@@ -37,12 +39,13 @@
 - 省略可: 単一ファイル修正で合否が二値検証できるもの、ドキュメント。
 
 ## Routing（ドメイン → スキル/評価者）
-- 要件が曖昧な新機能・新プロダクト → requirements-design で潜在要求を確認してから設計
-- UI・画面設計・デザインシステム・LP → ux-ui-design（新規画面は requirements-design 先行）。
-  Figma 操作は figma スキル群。UI 実装の評価は design-reviewer
-- 市場調査・競合分析・市場規模 → market-research（調査実行は deep-research に委譲）。
-  事業計画・GTM・戦略 → bizdev-strategy。投資家資料・ピッチ → investor-materials。
-  調査レポートの数値検証は research-reviewer
+- 要件定義・仕様策定・新機能・新プロダクト (feature/spec request) → requirements-design で
+  潜在要求を確認してから設計
+- UI・画面設計・デザインシステム・LP・ダッシュボード (UI/screen design) → ux-ui-design
+  （新規画面は requirements-design 先行）。Figma 操作は figma スキル群
+- 市場調査・競合分析・市場規模 (market research) → market-research（調査実行は deep-research に委譲）。
+  事業計画・GTM・戦略 (business plan / go-to-market) → bizdev-strategy。
+  投資家資料・ピッチ (pitch deck) → investor-materials
 - インフラ・AWS/GCP/Cloudflare・Terraform → cloud-infra
 - 該当スキルが見つからない未知のタスク → find-skills で探してから着手
 

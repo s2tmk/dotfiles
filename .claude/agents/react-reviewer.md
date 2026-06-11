@@ -89,17 +89,13 @@ If ANY finding is CRITICAL or HIGH, the verdict is FAIL. Do not rationalize find
 
 When the component is a **primary UI surface** (page, screen, landing section, dashboard widget, onboarding step), generic AI-template UI is a **HIGH** finding that produces a **FAIL** verdict.
 
-**Deterministic check — flag HIGH if ALL of the following are true:**
-1. The component is a primary surface (page/screen/landing section/dashboard).
-2. Default component-library components are used (e.g. shadcn `Card`, `Badge`, `Button variant="default"`) with no project-specific overrides to color, typography, or spacing.
-3. No art direction is present: no custom type scale, no spatial rhythm, no brand color application.
-
-→ Finding: `HIGH: Generic AI-template UI — default component-library components on a primary surface with no project-specific design overrides.`
-
-Additional HIGH triggers on primary surfaces:
-- Any anti-pattern from the table in `skills/ux-ui-design/SKILL.md` present (purple/blue gradient hero, uniform border-radius+shadow card grid, default font stack as display type, no visual hierarchy, emoji used as icons).
+**FAIL conditions on primary surfaces — identical to design-reviewer's set. ANY single condition below is HIGH:**
+- Default component-library components (e.g. shadcn `Card`, `Badge`, `Button variant="default"`) with no project-specific overrides to color, typography, or spacing.
+- Any anti-pattern from the table in `skills/ux-ui-design/SKILL.md` (purple/blue gradient hero, uniform border-radius+shadow card grid, default font stack as display type, no visual hierarchy, emoji used as icons).
 - Off-scale font sizes (not on the 1.25-ratio modular scale defined in ux-ui-design).
 - Off-grid spacing (values not on the 4/8px system).
+
+→ Finding: `HIGH: Generic AI-template UI — <matched condition> on a primary surface.`
 
 ### MEDIUM — Design Quality (Utility Components)
 

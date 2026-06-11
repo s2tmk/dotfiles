@@ -125,7 +125,9 @@ With Tailwind the scale maps to `p-1` (4px) through `p-16` (64px) — never use 
 
 **Authoritative type scale lives in ux-ui-design; the Tailwind classes below map to that scale.**
 
-Do not define an independent scale here. Use the 1.25 ("Major Third") ratio scale from `ux-ui-design/SKILL.md` and map it to Tailwind utility classes:
+Do not define an independent scale here. Use the 1.25 ("Major Third") ratio scale from `ux-ui-design/SKILL.md` and map it to Tailwind utility classes.
+
+> **Note:** Tailwind's built-in scale does NOT align exactly with the 1.25-ratio scale above 20px (e.g. `text-2xl` = 24px vs token 25px). For production, use CSS custom properties (`var(--text-xl)` etc.) or extend `fontSize` in the Tailwind config — built-in classes above `text-xl` are approximations only.
 
 | Token (ux-ui-design) | Value | Tailwind class |
 |---|---|---|

@@ -2,7 +2,7 @@
   "cleanupPeriodDays": 28,
   "env": {
     "CLAUDE_CODE_NO_FLICKER": "1",
-    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "512000",
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "768000",
     "HARNESS_STOP_GATE": "block"
   },
   "permissions": {
