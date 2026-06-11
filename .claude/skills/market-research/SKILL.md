@@ -1,6 +1,6 @@
 ---
 name: market-research
-description: Market research producing evidence-grade outputs: TAM/SAM/SOM sizing triangulated against government statistics, industry reports, and academic literature; competitive analysis; investor due diligence; technology scans. Delivers decisions, not summaries. Load when the user needs market sizing, competitive intelligence, fund research, or thesis validation at academic-paper rigor.
+description: Market research producing evidence-grade outputs: TAM/SAM/SOM sizing triangulated against government statistics, industry reports, and academic literature; competitive analysis; investor due diligence; technology scans. Delivers decisions, not summaries. Load when the user needs market sizing, competitive intelligence, fund research, or thesis validation at academic-paper rigor. Keywords: 市場調査, 競合分析, 市場規模, TAM, デューデリジェンス.
 origin: ECC
 ---
 
@@ -9,6 +9,10 @@ origin: ECC
 # Market Research
 
 Produce research that supports decisions, not research theater.
+
+## Tool Integration
+
+For any non-trivial research question, invoke the **deep-research** harness skill for multi-source fan-out with adversarial verification — its cited output is the raw evidence layer; this skill defines the synthesis and output format on top. For targeted lookups use **WebSearch** (query execution) and **WebFetch** (primary-source retrieval). Never write findings without executed searches.
 
 ## When to Activate
 
@@ -154,6 +158,10 @@ Default structure:
 8. **Open questions** (what research could not resolve)
 9. **Sources** (formatted citations)
 
+## Verification Gate
+
+Before delivery, run the **research-reviewer** agent on the draft. Pass it ONLY the draft and source list — not your reasoning. FAIL => fix and re-run. Never deliver unverified numbers.
+
 ## Quality Gate
 
 Before delivering:
@@ -165,3 +173,7 @@ Before delivering:
 - Engineers and designers can derive actionable next steps
 - Open questions are listed so the team knows what is unresolved
 - The output makes a decision easier, not just more documented
+
+## Delivery
+
+If the user's Notion workspace is connected (Notion MCP), offer to publish the final deliverable as a Notion page (`notion-create-pages` for new deliverables, `notion-update-page` for revisions).

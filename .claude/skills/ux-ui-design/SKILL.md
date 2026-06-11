@@ -1,6 +1,6 @@
 ---
 name: ux-ui-design
-description: UX and UI design guidance covering the 5 planes of UX (Garrett), cognitive psychology laws (Hick/Fitts/Miller/Gestalt), typography scale, 4/8px spacing, accessible color contrast, layout grid discipline, anti-pattern detection for generic AI-generated UI, and a senior designer's review checklist. Load when working on UI design, screen design, design systems, UX, Figma work, or landing pages.
+description: UX and UI design guidance covering the 5 planes of UX (Garrett), cognitive psychology laws (Hick/Fitts/Miller/Gestalt), typography scale, 4/8px spacing, accessible color contrast, layout grid discipline, anti-pattern detection for generic AI-generated UI, and a senior designer's review checklist. Load when working on UI design, screen design, design systems, UX, Figma work, or landing pages. Japanese triggers: UI設計, 画面設計, ダッシュボード, デザインシステム, ランディングページ, ワイヤーフレーム.
 origin: Local
 ---
 
@@ -9,6 +9,12 @@ origin: Local
 # UX / UI Design
 
 The bar: output a senior UX/UI designer would sign off on — not a component-library default.
+
+## Mandatory Gate — New Screens and Features
+
+**If this is a NEW screen or feature (not a refinement of existing UI), complete requirements-design FIRST and attach the confirmed brief. Do not start plane work without it.**
+
+Refinements and restyling of existing UI may proceed directly to Phase 0. When in doubt, treat it as new.
 
 ## When to Activate
 
@@ -81,9 +87,22 @@ Surface complexity only when the user has demonstrated intent:
 
 ---
 
+## Figma Integration
+
+Use Figma at appropriate fidelity for the stakes of the work:
+
+- **Design-system work** (tokens, component libraries): use `figma:figma-generate-library` to build or extend a library from code.
+- **Building screens in Figma**: load `figma:figma-use` first (mandatory), then call `figma:figma-generate-design` to translate a layout or page into Figma.
+- **Implementing FROM a Figma URL**: call `get_design_context` with the file/node URL to extract the design spec before writing code. Never guess at a design from a screenshot alone.
+- **Wireframe → Figma → code round-trips** are preferred for high-stakes UI (landing pages, onboarding flows, primary product screens). Wireframe in text first, push to Figma for visual validation, then implement.
+
+---
+
 ## Typography Scale & Vertical Rhythm
 
 Use a modular scale. Don't invent arbitrary sizes.
+
+**This scale is the single source of truth; frontend-patterns' Tailwind sizes are a mapping of this scale.**
 
 ```css
 :root {

@@ -85,18 +85,33 @@ If ANY finding is CRITICAL or HIGH, the verdict is FAIL. Do not rationalize find
 - **Prop drilling beyond 3 levels** — Consider Context or composition with `children`.
 - **Component over 200 lines** — Extract subcomponents or a custom hook.
 
-### MEDIUM — Design Quality
+### HIGH — Design Quality (Primary Surfaces)
 
-A senior UX/UI designer must be able to sign off. Flag when they would not:
+When the component is a **primary UI surface** (page, screen, landing section, dashboard widget, onboarding step), generic AI-template UI is a **HIGH** finding that produces a **FAIL** verdict.
 
-- **Generic AI-template UI** — Default shadcn/Tailwind appearance with no art direction: uniform gray tones, no typographic hierarchy, no spatial rhythm, cookie-cutter card layouts. A real product needs a visual point of view.
-- **Typography scale inconsistency** — Arbitrary font sizes that do not follow a defined scale (e.g. 13px, 15px, 17px mixed freely). Use a type scale (e.g. Tailwind's default or a custom one) and apply it consistently.
-- **Spacing rhythm breakdown** — Padding/margin values that do not align to an 8px (or 4px) grid. Mixed arbitrary values signal no spatial system.
-- **Color tone incoherence** — Multiple unrelated color families used without a design system rationale. Brand colors, semantic colors (success/error), and neutral grays should form a coherent palette.
-- **Alignment grid violations** — Elements that are not aligned to a consistent grid or column structure (visual scanning is disrupted).
-- **Interaction states absent** — Hover, focus, active, disabled states missing on interactive elements. Required for accessibility and user confidence.
+**Deterministic check — flag HIGH if ALL of the following are true:**
+1. The component is a primary surface (page/screen/landing section/dashboard).
+2. Default component-library components are used (e.g. shadcn `Card`, `Badge`, `Button variant="default"`) with no project-specific overrides to color, typography, or spacing.
+3. No art direction is present: no custom type scale, no spatial rhythm, no brand color application.
 
-Note: design findings are MEDIUM. They do not block a PASS verdict alone.
+→ Finding: `HIGH: Generic AI-template UI — default component-library components on a primary surface with no project-specific design overrides.`
+
+Additional HIGH triggers on primary surfaces:
+- Any anti-pattern from the table in `skills/ux-ui-design/SKILL.md` present (purple/blue gradient hero, uniform border-radius+shadow card grid, default font stack as display type, no visual hierarchy, emoji used as icons).
+- Off-scale font sizes (not on the 1.25-ratio modular scale defined in ux-ui-design).
+- Off-grid spacing (values not on the 4/8px system).
+
+### MEDIUM — Design Quality (Utility Components)
+
+For utility components (form fields, table rows, badges, tooltips, internal-only controls), design findings are MEDIUM and do not block a PASS verdict alone:
+
+- **Typography scale inconsistency** — Arbitrary font sizes not following the ux-ui-design scale.
+- **Spacing rhythm breakdown** — Padding/margin values not aligned to the 4/8px grid.
+- **Color tone incoherence** — Unrelated color families without design system rationale.
+- **Alignment grid violations** — Elements not aligned to a consistent grid or column structure.
+- **Interaction states absent** — Hover, focus, active, disabled states missing on interactive elements.
+
+See `skills/ux-ui-design/SKILL.md` → Anti-Pattern table for the full criteria used to evaluate design quality.
 
 ## Output Format
 

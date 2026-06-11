@@ -14,6 +14,8 @@ description: Distill a correction or hard-won insight from the current session i
 2. **保存先を判定する**:
    - このプロジェクト固有（用語、設計判断、データソース、レビュー手順）
      → プロジェクトの `MEMORY.md` に一行追記（既存形式に合わせる）
+   - 事業開発・リサーチ系の教訓（誤ったソース選定、推定の未ラベル、根拠のない提案）
+     → プロジェクト MEMORY.md の `## Research Lessons` 配下へ（市場の事実はプロジェクト固有なため）
    - プロジェクト横断で再利用できるパターン（ツールの落とし穴、ワークフロー改善）
      → `~/.claude/skills/learned/<kebab-name>/SKILL.md` を新規作成
 3. **ルール形式で書く**: 「Xのときは必ずY」「Zをしない — 代わりにW」。

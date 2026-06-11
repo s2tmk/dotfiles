@@ -242,7 +242,7 @@ export function errorHandler(error: unknown): Response {
     }, { status: 400 })
   }
 
-  console.error('Unexpected error:', error)
+  logger.error('Unexpected error', { error })  // structured logger — never console.* in production
   return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
 }
 ```
@@ -348,7 +348,7 @@ class JobQueue<T> {
       try {
         await this.execute(job)
       } catch (err) {
-        console.error('Job failed:', err)
+        logger.error('Job failed', { err })  // structured logger — never console.* in production
       }
     }
     this.processing = false

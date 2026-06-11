@@ -1,6 +1,6 @@
 ---
 name: investor-materials
-description: Create and update pitch decks, one-pagers, investor memos, accelerator applications, financial models, and use-of-funds tables — all internally consistent from a single source of truth. Load when the user needs investor-facing documents, projections, milestone plans, or fundraising materials.
+description: Create and update pitch decks, one-pagers, investor memos, accelerator applications, financial models, and use-of-funds tables — all internally consistent from a single source of truth. Load when the user needs investor-facing documents, projections, milestone plans, or fundraising materials. Keywords: ピッチデッキ, 投資家向け資料, 資金調達, 財務モデル.
 origin: ECC
 ---
 
@@ -31,6 +31,10 @@ Create or confirm a single source of truth before writing:
 - Milestones and timelines
 
 If conflicting numbers appear, stop and resolve them before drafting.
+
+## Market Data Prerequisite
+
+Market size and competitive claims MUST trace back to a **market-research** output (or the Evidence section of a **bizdev-strategy** document). If they don't exist, run **market-research** first — never accept TAM/SAM numbers that exist only in the deck.
 
 ## Core Workflow
 
@@ -100,3 +104,11 @@ Before delivering:
 - Assumptions are visible, not buried
 - The story is clear without hype language
 - The final asset is defensible in a partner meeting
+
+## Verification
+
+Run the **research-reviewer** agent on the completed draft. Pass it the draft and the source list from the underlying market-research output — not your reasoning. FAIL => fix and re-run.
+
+## Delivery
+
+If the user's Notion workspace is connected (Notion MCP), offer to publish the final deliverable as a Notion page (`notion-create-pages` for new documents, `notion-update-page` for revisions).

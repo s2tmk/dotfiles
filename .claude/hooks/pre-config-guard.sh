@@ -7,9 +7,23 @@ source "$(dirname "$0")/lib.sh" || exit 0
 read_hook_input
 fp=$(hook_field '.tool_input.file_path')
 [ -n "$fp" ] || exit 0
-[ -f "$fp" ] || exit 0  # new files are fine
 
 base=$(basename "$fp")
+
+# New config files are allowed UNLESS their content weakens strictness
+# (blocks the "create tsconfig.loose.json instead of editing" loophole).
+if [ ! -f "$fp" ]; then
+  case "$base" in
+    tsconfig*.json|.eslintrc*|eslint.config.*|biome.json|biome.jsonc)
+      content=$(hook_field '.tool_input.content')
+      if printf '%s' "$content" | grep -qE '"(strict|strictNullChecks|noImplicitAny|noUnusedLocals|alwaysStrict)"[[:space:]]*:[[:space:]]*false|"skipLibCheck"[[:space:]]*:[[:space:]]*true'; then
+        echo "Blocked: this new config file weakens type/lint strictness (strict:false etc.). Fix the failing code instead of creating a looser config. If genuinely required, explain why and get the user's approval." >&2
+        exit 2
+      fi
+      ;;
+  esac
+  exit 0
+fi
 case "$base" in
   .eslintrc|.eslintrc.*|eslint.config.*|\
   .prettierrc|.prettierrc.*|prettier.config.*|\

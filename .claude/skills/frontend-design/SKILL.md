@@ -27,7 +27,11 @@ Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
 ## Frontend Aesthetics Guidelines
 
 Focus on:
-- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
+- **Typography**: Apply these measurable rules, not adjectives:
+  - **Two-slot pairing rule**: choose exactly one display typeface and one body typeface from *different* categories (e.g. slab/serif display + grotesque body; humanist sans display + monospace body; transitional serif display + geometric sans body). Never pair two typefaces from the same category.
+  - **Banned as primary display font** (the default AI look — never use these as the hero/heading face): Inter, Roboto, system-ui, DM Sans, Space Grotesk, Arial. These are acceptable for body copy where neutrality is intentional.
+  - **Heading letter-spacing**: apply −1% to −3% (`letter-spacing: -0.01em` to `-0.03em`) for display sizes ≥32px. Tight tracking at large sizes signals typographic intention; loose or default tracking at those sizes reads as an afterthought.
+  - Pair a distinctive display font with a refined body font — unexpected, characterful display face with a workhorse body that doesn't compete.
 - **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
 - **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
 - **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.

@@ -37,13 +37,18 @@ if [ -n "$ts_js" ]; then
   done <<< "$ts_js"
 fi
 
-# --- 2) Typecheck (blocking) --------------------------------------------------
+# --- 2) Typecheck (blocking; missing tsc surfaces once instead of silently passing)
 errors=""
+tsc_missing=""
 ts_only=$(printf '%s\n' "$edited" | grep -E '\.(ts|tsx|mts|cts)$' || true)
 if [ -n "$ts_only" ]; then
   tsdirs=$(while IFS= read -r f; do nearest_up "$f" tsconfig.json || true; done <<< "$ts_only" | sort -u)
   while IFS= read -r tdir; do
     [ -n "$tdir" ] || continue
+    if ! (cd "$tdir" && npx --no-install tsc --version >/dev/null 2>&1); then
+      tsc_missing="$tsc_missing $tdir"
+      continue
+    fi
     out=$( (cd "$tdir" && timeout 240 npx --no-install tsc --noEmit --pretty false 2>&1) || true )
     [ -n "$out" ] || continue
     # only surface errors that mention files edited this session
@@ -59,16 +64,29 @@ $hits"
 fi
 
 # --- 3) Test reminder (warn; blocks only in strict mode) ----------------------
+# Threshold: >=3 source files, OR >=1 file in a security-sensitive path.
 reminder=""
 nfiles=$(printf '%s\n' "$edited" | grep -cE '\.(ts|tsx|js|jsx|py|go|rs|rb|swift|kt)$' 2>/dev/null || true)
-if [ "${nfiles:-0}" -ge 3 ] && ! grep -qE '(vitest|jest|playwright|pytest|go test|cargo test|(npm|pnpm|yarn|bun)( run)? test)' "$dir/commands.txt" 2>/dev/null; then
-  reminder="Note: ${nfiles} source files were edited but no test runner ran this session. Run the relevant tests before declaring this done."
+sensitive=$(printf '%s\n' "$edited" | grep -icE '(auth|login|session|payment|billing|secret|token|middleware|permission)' 2>/dev/null || true)
+tests_ran=true
+grep -qE '(vitest|jest|playwright|pytest|go test|cargo test|(npm|pnpm|yarn|bun)( run)? test)' "$dir/commands.txt" 2>/dev/null || tests_ran=false
+if [ "$tests_ran" = "false" ]; then
+  if [ "${sensitive:-0}" -ge 1 ]; then
+    reminder="Note: security-sensitive files (auth/payment/session/...) were edited but no test runner ran this session. Run the relevant tests before declaring this done."
+  elif [ "${nfiles:-0}" -ge 3 ]; then
+    reminder="Note: ${nfiles} source files were edited but no test runner ran this session. Run the relevant tests before declaring this done."
+  fi
 fi
 
-if [ -n "$errors" ]; then
+if [ -n "$errors" ] || [ -n "$tsc_missing" ]; then
   {
-    echo "Stop gate: TypeScript errors in files you edited this session. Fix them before finishing:"
-    echo "$errors"
+    if [ -n "$errors" ]; then
+      echo "Stop gate: TypeScript errors in files you edited this session. Fix them before finishing:"
+      echo "$errors"
+    fi
+    if [ -n "$tsc_missing" ]; then
+      echo "Stop gate: tsc not found in:$tsc_missing — typecheck could NOT run on edited TS files. Run the project's own check script (e.g. npm run typecheck / build) to verify types, then finish. (This warning fires once per edit batch.)"
+    fi
     [ -n "$reminder" ] && echo "$reminder"
   } >&2
   exit 2

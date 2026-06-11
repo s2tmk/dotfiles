@@ -31,8 +31,20 @@
   code-reviewer（後者は security-reviewer も）を起動。渡すのは変更ファイル一覧と要件のみ。
   自己評価は絶対に渡さない。React/UI の変更は react-reviewer。
 - 評価が FAIL → 修正して再評価。指摘の値切り交渉をしない。
-- 重要な設計判断は codex review で他ベンダー第二意見。
+- 他ベンダー第二意見（codex review）の発動条件: 新しい外部依存の追加 / 認証フロー設計 /
+  DB スキーマ変更 / サービス分割・アーキテクチャ選定。該当したら起動する。
+- 重要ユーザーフローを変更したら e2e-runner で E2E 確認。
 - 省略可: 単一ファイル修正で合否が二値検証できるもの、ドキュメント。
+
+## Routing（ドメイン → スキル/評価者）
+- 要件が曖昧な新機能・新プロダクト → requirements-design で潜在要求を確認してから設計
+- UI・画面設計・デザインシステム・LP → ux-ui-design（新規画面は requirements-design 先行）。
+  Figma 操作は figma スキル群。UI 実装の評価は design-reviewer
+- 市場調査・競合分析・市場規模 → market-research（調査実行は deep-research に委譲）。
+  事業計画・GTM・戦略 → bizdev-strategy。投資家資料・ピッチ → investor-materials。
+  調査レポートの数値検証は research-reviewer
+- インフラ・AWS/GCP/Cloudflare・Terraform → cloud-infra
+- 該当スキルが見つからない未知のタスク → find-skills で探してから着手
 
 ## Context management
 - コンテキスト約70%で tasks/handoff.md（完了/次/判断/パス）を書いて /clear。

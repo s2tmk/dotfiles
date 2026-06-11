@@ -123,27 +123,24 @@ With Tailwind the scale maps to `p-1` (4px) through `p-16` (64px) — never use 
 
 ### Typography Scale
 
-Establish a type scale and stick to it:
+**Authoritative type scale lives in ux-ui-design; the Tailwind classes below map to that scale.**
 
-```css
-:root {
-  --text-xs:   0.75rem;   /* 12px */
-  --text-sm:   0.875rem;  /* 14px */
-  --text-base: 1rem;      /* 16px */
-  --text-lg:   1.125rem;  /* 18px */
-  --text-xl:   1.25rem;   /* 20px */
-  --text-2xl:  1.5rem;    /* 24px */
-  --text-3xl:  1.875rem;  /* 30px */
-  --text-4xl:  2.25rem;   /* 36px */
+Do not define an independent scale here. Use the 1.25 ("Major Third") ratio scale from `ux-ui-design/SKILL.md` and map it to Tailwind utility classes:
 
-  /* Line heights */
-  --leading-tight:  1.25;
-  --leading-normal: 1.5;
-  --leading-relaxed: 1.75;
-}
-```
+| Token (ux-ui-design) | Value | Tailwind class |
+|---|---|---|
+| `--text-xs`   | 0.64rem  (~10px) | `text-[0.64rem]` or custom token |
+| `--text-sm`   | 0.8rem   (~13px) | `text-[0.8rem]`  or custom token |
+| `--text-base` | 1rem     (16px)  | `text-base` |
+| `--text-lg`   | 1.25rem  (20px)  | `text-xl` |
+| `--text-xl`   | 1.563rem (25px)  | `text-2xl` (≈ 24px, use custom token for exactness) |
+| `--text-2xl`  | 1.953rem (31px)  | `text-3xl` (≈ 30px, use custom token for exactness) |
+| `--text-3xl`  | 2.441rem (39px)  | `text-4xl` (≈ 36px, use custom token for exactness) |
+| `--text-4xl`  | 3.052rem (49px)  | `text-5xl` (≈ 48px, use custom token for exactness) |
 
-Vertical rhythm: headings use `leading-tight`, body copy uses `leading-relaxed`.
+For pixel-exact fidelity, extend Tailwind's `fontSize` config with the CSS custom properties from `ux-ui-design`. Never use arbitrary sizes like `text-[13px]` or `text-[17px]` that fall outside the scale.
+
+Line heights: headings use `leading-tight` (1.2), body copy uses `leading-relaxed` (1.75).
 
 ### Color & Contrast
 

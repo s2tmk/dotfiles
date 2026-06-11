@@ -52,6 +52,23 @@ grep -q "Compact snapshot" "$TD/proj/tasks/handoff.md" && ok "pre-compact-save w
 # 10) kill switch disables blocking
 printf '{"tool_input":{"file_path":"%s/eslint.config.mjs"}}' "$TD" | HARNESS_HOOKS=off bash "$H/pre-config-guard.sh" && ok "HARNESS_HOOKS=off bypasses guard" || ng "kill switch"
 
+# 11) new config file with weakened strictness -> blocked
+printf '{"tool_input":{"file_path":"%s/tsconfig.loose.json","content":"{\\"compilerOptions\\":{\\"strict\\": false}}"}}' "$TD" | bash "$H/pre-config-guard.sh" 2>/dev/null
+[ $? -eq 2 ] && ok "config-guard blocks new weakening config" || ng "new weakening config"
+
+# 12) new config file with strict settings -> allowed
+printf '{"tool_input":{"file_path":"%s/tsconfig.strict.json","content":"{\\"compilerOptions\\":{\\"strict\\": true}}"}}' "$TD" | bash "$H/pre-config-guard.sh" && ok "config-guard allows strict new config" || ng "strict new config"
+
+# 13) stop-verify blocks once when tsc is missing for edited TS files
+mkdir -p "$TD/tsless/src"
+echo '{}' > "$TD/tsless/tsconfig.json"
+echo 'export const x = 1;' > "$TD/tsless/src/a.ts"
+mkdir -p "$HOME/.claude/tmp/harness/$SID"
+echo "$TD/tsless/src/a.ts" > "$HOME/.claude/tmp/harness/$SID/edited.txt"
+printf '{"session_id":"%s","stop_hook_active":false}' "$SID" | bash "$H/stop-verify.sh" 2>"$TD/tscmiss.err"
+[ $? -eq 2 ] && grep -q "tsc not found" "$TD/tscmiss.err" && ok "stop-verify surfaces missing tsc (exit 2)" || ng "missing tsc surfacing"
+printf '{"session_id":"%s","stop_hook_active":false}' "$SID" | bash "$H/stop-verify.sh" && ok "second stop passes (warn-once)" || ng "warn-once after tsc-missing"
+
 # cleanup (no rm -rf; targeted files only)
 rm -r "$HOME/.claude/tmp/harness/$SID" 2>/dev/null
 rm -r "$TD" 2>/dev/null
