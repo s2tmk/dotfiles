@@ -2,6 +2,9 @@
 # Stop gate: batch format + typecheck of files edited this session.
 # TS always; Python/Go/Rust only when the project demonstrably uses the tool.
 # Modes via HARNESS_STOP_GATE: block (default) | strict (tests required too) | off
+# Wired to Stop AND TeammateIdle (agent teams): teammate Stop firing is not
+# documented, so TeammateIdle guarantees coverage; clear-on-read makes a
+# double firing idempotent (second run sees an empty accumulator, exits 0).
 # Loop safety: exits 0 when stop_hook_active; accumulator is clear-on-read,
 # so a block fires at most once per batch of edits.
 set -u

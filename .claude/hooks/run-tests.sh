@@ -69,6 +69,15 @@ printf '{"session_id":"%s","stop_hook_active":false}' "$SID" | bash "$H/stop-ver
 [ $? -eq 2 ] && grep -q "tsc not found" "$TD/tscmiss.err" && ok "stop-verify surfaces missing tsc (exit 2)" || ng "missing tsc surfacing"
 printf '{"session_id":"%s","stop_hook_active":false}' "$SID" | bash "$H/stop-verify.sh" && ok "second stop passes (warn-once)" || ng "warn-once after tsc-missing"
 
+# 13b) stop-verify gates TeammateIdle-shaped input (agent teams: no
+# stop_hook_active field; gate must still fire and clear-on-read must hold)
+SIDT="${SID}-teammate"
+mkdir -p "$HOME/.claude/tmp/harness/$SIDT"
+echo "$TD/tsless/src/a.ts" > "$HOME/.claude/tmp/harness/$SIDT/edited.txt"
+printf '{"session_id":"%s","hook_event_name":"TeammateIdle"}' "$SIDT" | bash "$H/stop-verify.sh" 2>"$TD/teammate.err"
+[ $? -eq 2 ] && grep -q "tsc not found" "$TD/teammate.err" && ok "stop-verify gates TeammateIdle input (exit 2)" || ng "TeammateIdle gating"
+[ ! -f "$HOME/.claude/tmp/harness/$SIDT/edited.txt" ] && ok "TeammateIdle clear-on-read (idempotent vs double firing)" || ng "TeammateIdle clear-on-read"
+
 # 14) prompt-router: incidental English words must not route to UI
 out=$(printf '{"prompt":"system design review"}' | bash "$H/prompt-router.sh")
 printf '%s\n' "$out" | grep -q "ux-ui-design" && ng "router routes 'system design review' to UI" || ok "router ignores 'system design review'"
@@ -126,7 +135,7 @@ printf '{"session_id":"%s","stop_hook_active":false}' "$SIDP" | HARNESS_STOP_GAT
 [ $? -eq 0 ] && [ ! -s "$TD/pys.err" ] && ok "python gate skips cleanly without mypy config" || ng "python gate skip"
 
 # cleanup (no rm -rf; targeted files only)
-rm -r "$HOME/.claude/tmp/harness/$SID" "$HOME/.claude/tmp/harness/$SIDR" "$HOME/.claude/tmp/harness/$SIDP" 2>/dev/null
+rm -r "$HOME/.claude/tmp/harness/$SID" "$HOME/.claude/tmp/harness/$SIDR" "$HOME/.claude/tmp/harness/$SIDP" "$HOME/.claude/tmp/harness/$SIDT" 2>/dev/null
 rm -r "$TD" 2>/dev/null
 echo "----------------------------------------"
 echo "RESULT: $pass passed, $fail failed"

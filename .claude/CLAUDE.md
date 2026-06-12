@@ -30,6 +30,9 @@ Respond to the user in Japanese. Code, commit messages, identifiers, and technic
 - Codebase exploration, research, log digging → subagents. Bring back summaries and paths.
   Never paste >50 lines into the main context when a path + summary suffices.
 - One focused task per subagent. Launch independent investigations in parallel.
+- Agent teams (experimental): only when teammates must coordinate with each other
+  (shared task list, inter-agent messaging). Default stays one-shot subagents —
+  teams multiply token burn and each teammate still passes the Stop/TeammateIdle gate.
 
 ## Independent evaluation (generator ≠ evaluator)
 - After multi-file changes, architecture changes, or anything touching auth/payments/PII:

@@ -44,14 +44,14 @@ possible; L1 carries routing judgment only.
 | `pre-config-guard.sh` | PreToolUse (Edit/Write) | **Blocks** weakening lint/type configs — including the create-a-looser-new-config loophole |
 | `post-edit-accumulate.sh` | PostToolUse (Edit/Write) | Records edited files into session scratch |
 | `post-bash-track.sh` | PostToolUse (Bash) | Records executed commands (test-run detection) |
-| `stop-verify.sh` | Stop | Formats + typechecks edited files; **blocks the response on type errors** and bounces them back. Gates: `tsc --noEmit` (TS/JS), mypy/pyright (Python, only when a config exists), `go vet` (Go), `cargo check` (Rust) — never blocks on a missing tool (warn-once). Test reminder (1 file for auth/payment paths, 3 otherwise) surfaces once even without type errors. pnpm/yarn/bun runner detection with monorepo lockfile walk-up |
+| `stop-verify.sh` | Stop, TeammateIdle | Formats + typechecks edited files; **blocks the response on type errors** and bounces them back. TeammateIdle (agent teams) covers teammates, whose Stop firing is undocumented; clear-on-read makes a double firing idempotent. Gates: `tsc --noEmit` (TS/JS), mypy/pyright (Python, only when a config exists), `go vet` (Go), `cargo check` (Rust) — never blocks on a missing tool (warn-once). Test reminder (1 file for auth/payment paths, 3 otherwise) surfaces once even without type errors. pnpm/yarn/bun runner detection with monorepo lockfile walk-up |
 | `session-start.sh` | SessionStart | Injects `tasks/handoff.md` only (≤7 days old, ≤2KB cap); prunes stale scratch dirs |
 | `pre-compact-save.sh` | PreCompact | Saves git status + edited-file list into handoff.md |
 
 **Kill switches:**
 - `HARNESS_HOOKS=off` — disables every hook instantly (emergency)
 - `HARNESS_STOP_GATE=off|block|strict` — Stop gate only (default block; strict also requires tests)
-- Regression tests: `bash hooks/run-tests.sh` (27 cases, incl. router false-positive guards)
+- Regression tests: `bash hooks/run-tests.sh` (29 cases, incl. router false-positive guards)
 
 **Known tradeoffs:** `sandbox.excludedCommands` exempts `git` and `docker` — docker
 runs outside the network sandbox (it needs the daemon), so container commands can
@@ -128,6 +128,15 @@ CJK typography standards, and the artifact-persistence contract
 v2.6 (2026-06-12): added stripe-payments and auth-patterns skills (JP-aware:
 JPY zero-decimal, konbini async payments, 特商法; data-layer authz, Supabase
 getUser, LINE Login) with router + CLAUDE.md wiring (run-tests: 27 cases).
+v2.7 (2026-06-13): agent-teams compatibility pass after enabling
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. Audit result: all accumulator state
+is keyed by session_id, so concurrent teammate sessions cannot collide;
+pre-config-guard/prompt-router are stateless and apply to teammates as-is.
+One gap closed: teammates' Stop-hook firing is not documented, so
+stop-verify.sh is now also wired to `TeammateIdle` (the documented teammate
+quality-gate event) — idempotent under double firing thanks to clear-on-read
+(run-tests: 29 cases). CLAUDE.md gained a teams-vs-subagents discipline line
+(default one-shot subagents; teams only for inter-agent coordination).
 Remaining backlog: Figma round-trip as an enforced (not advisory) gate, a
 requirements-reviewer evaluator (brief quality is still only existence-checked),
 customer-validation methodology depth, and a live Opus field trial.
