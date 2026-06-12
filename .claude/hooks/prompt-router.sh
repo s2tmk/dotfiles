@@ -16,10 +16,12 @@ emit=""
 add() { emit="${emit}${1}
 "; }
 
-if printf '%s' "$prompt" | grep -qiE '新機能|要件定義|仕様|プロダクト設計|new feature|spec|requirements'; then
+if printf '%s' "$prompt" | grep -qiE '新機能|要件定義|仕様書|機能仕様|プロダクト設計|new feature|requirements'; then
   add "Routing: run requirements-design to confirm latent requirements before implementing."
 fi
-if printf '%s' "$prompt" | grep -qiE 'UI|画面|デザイン|ダッシュボード|ランディング|(^|[^a-zA-Z])LP([^a-zA-Z]|$)|ワイヤーフレーム|design|screen|dashboard|landing'; then
+# English UI keywords require UI-adjacent context to avoid false positives
+# ("system design", "screen reader", ...); JA keywords are high-precision as-is.
+if printf '%s' "$prompt" | grep -qiE '画面|デザイン|ダッシュボード|ランディング|ワイヤーフレーム|(^|[^a-zA-Z])(UI|LP)([^a-zA-Z]|$)|design (system|mockup|review of (the )?UI)|screen (design|layout)|landing page|dashboard'; then
   add "Routing: ux-ui-design (standards) + frontend-design (build). After building, run design-reviewer for independent evaluation (FAIL = do not ship)."
 fi
 if printf '%s' "$prompt" | grep -qiE '市場調査|競合|市場規模|デューデリ|market (research|sizing|entry)|competitive|due diligence|TAM'; then
@@ -35,5 +37,5 @@ if printf '%s' "$prompt" | grep -qiE 'インフラ|AWS|GCP|Cloudflare|Terraform|
   add "Routing: cloud-infra skill (IaC, least-privilege, DR, cost guardrails)."
 fi
 
-[ -n "$emit" ] && printf '%s' "$emit" | head -3
+[ -n "$emit" ] && printf '%s' "$emit"
 exit 0

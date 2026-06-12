@@ -44,14 +44,18 @@ possible; L1 carries routing judgment only.
 | `pre-config-guard.sh` | PreToolUse (Edit/Write) | **Blocks** weakening lint/type configs — including the create-a-looser-new-config loophole |
 | `post-edit-accumulate.sh` | PostToolUse (Edit/Write) | Records edited files into session scratch |
 | `post-bash-track.sh` | PostToolUse (Bash) | Records executed commands (test-run detection) |
-| `stop-verify.sh` | Stop | Formats + `tsc --noEmit` on edited files; **blocks the response on type errors** and bounces them back. Missing tsc surfaces once instead of passing silently. Test reminder (1 file for auth/payment paths, 3 otherwise). pnpm/yarn/bun runner detection with monorepo lockfile walk-up |
+| `stop-verify.sh` | Stop | Formats + typechecks edited files; **blocks the response on type errors** and bounces them back. Gates: `tsc --noEmit` (TS/JS), mypy/pyright (Python, only when a config exists), `go vet` (Go), `cargo check` (Rust) — never blocks on a missing tool (warn-once). Test reminder (1 file for auth/payment paths, 3 otherwise) surfaces once even without type errors. pnpm/yarn/bun runner detection with monorepo lockfile walk-up |
 | `session-start.sh` | SessionStart | Injects `tasks/handoff.md` only (≤7 days old, ≤2KB cap); prunes stale scratch dirs |
 | `pre-compact-save.sh` | PreCompact | Saves git status + edited-file list into handoff.md |
 
 **Kill switches:**
 - `HARNESS_HOOKS=off` — disables every hook instantly (emergency)
 - `HARNESS_STOP_GATE=off|block|strict` — Stop gate only (default block; strict also requires tests)
-- Regression tests: `bash hooks/run-tests.sh` (14 cases)
+- Regression tests: `bash hooks/run-tests.sh` (23 cases, incl. router false-positive guards)
+
+**Known tradeoffs:** `sandbox.excludedCommands` exempts `git` and `docker` — docker
+runs outside the network sandbox (it needs the daemon), so container commands can
+reach arbitrary hosts. Accepted for dev ergonomics; revisit if running untrusted code.
 
 **No-false-block design:** every hook exits 0 on internal error; the Stop gate
 checks `stop_hook_active` and uses a clear-on-read accumulator (at most one
@@ -60,14 +64,19 @@ block per edit batch).
 ## agents/ — independent evaluators (GAN pattern)
 
 code-reviewer / security-reviewer / react-reviewer / design-reviewer /
-research-reviewer / build-error-resolver / e2e-runner. All pinned to
+research-reviewer / build-error-resolver / e2e-runner. Pinned to
 `model: sonnet` (evaluation burns the cheaper rate window; independence — not
-model tier — is what makes the loop work). Evaluators receive **only the
-changed-file list and requirements**, never the generator's self-assessment.
-Any CRITICAL/HIGH finding ⇒ verdict FAIL; "acceptable overall" rationalization
-is forbidden. design-reviewer FAILs generic-AI-template UI on primary surfaces;
-research-reviewer refutes unsourced numbers (two FAILs ⇒ stop and surface to
-the user).
+model tier — is what makes the loop work), except security-reviewer on
+`model: opus` (cross-file injection chains are recall-bound). Evaluators are
+read-only (no Write/Edit) and receive **only the changed-file list and
+requirements**, never the generator's self-assessment. All reviewers emit one
+canonical `## Verdict` block (severity counts + exactly one PASS/FAIL);
+any CRITICAL/HIGH finding ⇒ FAIL; "acceptable overall" rationalization is
+forbidden. design-reviewer captures screenshots via Playwright MCP (1440px +
+390px) whenever a URL/HTML is reachable and FAILs generic-AI-template UI on
+primary surfaces; research-reviewer refutes unsourced numbers (two FAILs ⇒
+stop and surface to the user); e2e-runner returns per-journey PASS/FAIL and
+may not quarantine the journey under test.
 
 ## Provenance
 
@@ -97,8 +106,9 @@ the user).
 
 ## Default model policy
 
-- Default: `claude-opus-4-8` (effort xhigh). Switch to Fable via `/model` only
-  for long autonomous runs or ambiguous-spec interpretation.
+- Default: `claude-fable-5[1m]` (set via `/model` on 2026-06-12; previously
+  `claude-opus-4-8`, effort xhigh). Drop back to Opus via `/model` when rate
+  limits bite — the harness is designed so Opus/Sonnet still clear the bar.
 - The harness closes failures caused by skipped verification, instruction
   drift, and context decay. Absolute capability gaps remain — that is what the
   Fable escape hatch is for.
@@ -108,9 +118,17 @@ the user).
 Independent evaluator agents (no self-assessment passed in, rationalization
 forbidden), iterated until >90 in all domains:
 software development **91** / UX-UI design **93** / business development **93**.
-Remaining backlog: deterministic gates for non-TS languages, pixel-level visual
-verification, Figma round-trip as an enforced (not advisory) gate, and a live
-Opus field trial.
+
+v2.5 (2026-06-12, second 5-agent adversarial review): fixed the
+generator≠evaluator breaches (security-reviewer write access, frontend-design
+vs ux-ui-design doctrine conflict), gave design-reviewer/e2e-runner real
+Playwright access, added non-TS typecheck gates, JP market-research sources,
+CJK typography standards, and the artifact-persistence contract
+(`docs/strategy/`, `docs/requirements/`).
+Remaining backlog: Figma round-trip as an enforced (not advisory) gate, a
+requirements-reviewer evaluator (brief quality is still only existence-checked),
+payments/Stripe + managed-auth implementation skills, customer-validation
+methodology depth, and a live Opus field trial.
 
 ## Improvement loop (harness assumption auditing)
 

@@ -1,6 +1,6 @@
 ---
 name: postgres-patterns
-description: PostgreSQL patterns for query optimization, schema design, index selection (B-tree/GIN/BRIN/partial/covering), Row Level Security, connection pooling, cursor pagination, and anti-pattern detection. Load when writing SQL, designing schemas, troubleshooting slow queries, or setting up Supabase RLS.
+description: PostgreSQL patterns for query optimization, schema design, index selection (B-tree/GIN/BRIN/partial/covering), Row Level Security, connection pooling, cursor pagination, and anti-pattern detection. Load for PostgreSQL, SQL, スキーマ設計, インデックス, スロークエリ, 接続プール, RLS, writing SQL, designing schemas, troubleshooting slow queries, or setting up Supabase RLS.
 origin: ECC
 ---
 
@@ -8,7 +8,7 @@ origin: ECC
 
 # PostgreSQL Patterns
 
-Quick reference for PostgreSQL best practices. For detailed guidance, use the `database-reviewer` agent.
+Quick reference for PostgreSQL best practices. For schema changes, request a code-reviewer pass and a codex cross-vendor review per CLAUDE.md.
 
 ## When to Activate
 
@@ -35,7 +35,8 @@ Quick reference for PostgreSQL best practices. For detailed guidance, use the `d
 
 | Use Case | Correct Type | Avoid |
 |----------|-------------|-------|
-| IDs | `bigint` | `int`, random UUID |
+| IDs | `bigint` | `int`, UUIDv4 |
+| External/unguessable IDs | UUIDv7 (`uuidv7()` native in PG 18) | UUIDv4 |
 | Strings | `text` | `varchar(255)` |
 | Timestamps | `timestamptz` | `timestamp` |
 | Money | `numeric(10,2)` | `float` |
@@ -127,7 +128,8 @@ ALTER SYSTEM SET work_mem = '8MB';
 
 -- Timeouts
 ALTER SYSTEM SET idle_in_transaction_session_timeout = '30s';
-ALTER SYSTEM SET statement_timeout = '30s';
+-- statement_timeout per-role, not global: migrations and admin sessions need longer
+ALTER ROLE app_user SET statement_timeout = '30s';
 
 -- Monitoring
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
@@ -140,8 +142,7 @@ SELECT pg_reload_conf();
 
 ## Related
 
-- Agent: `database-reviewer` - Full database review workflow
-- Skill: `clickhouse-io` - ClickHouse analytics patterns
+- Review: for schema changes, request a code-reviewer pass and a codex cross-vendor review per CLAUDE.md
 - Skill: `backend-patterns` - API and backend patterns
 
 ---

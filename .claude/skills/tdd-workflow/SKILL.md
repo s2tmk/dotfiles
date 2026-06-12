@@ -1,6 +1,6 @@
 ---
 name: tdd-workflow
-description: Test-driven development workflow enforcing RED-GREEN-REFACTOR cycles with 80%+ coverage, Arrange-Act-Assert test structure, descriptive naming, unit/integration/E2E test organization, mocking patterns, and Git checkpoint commits. Load when writing new features, fixing bugs, or refactoring code.
+description: Test-driven development workflow enforcing RED-GREEN-REFACTOR cycles with 80%+ coverage, Arrange-Act-Assert test structure, descriptive naming, unit/integration/E2E test organization, and mocking patterns. Load for feature work with testable units — テスト駆動開発, TDD, ユニットテスト, テスト作成, バグ修正, new features, bug fixes with reproducible behavior; skip for spikes, prototypes, throwaway scripts, and pure refactors with existing coverage.
 origin: ECC
 ---
 
@@ -12,11 +12,11 @@ This skill ensures all code development follows TDD principles with comprehensiv
 
 ## When to Activate
 
-- Writing new features or functionality
-- Fixing bugs or issues
-- Refactoring existing code
-- Adding API endpoints
-- Creating new components
+- Feature work with testable units: new features, API endpoints, components with logic
+- Bug fixes where the bug can be captured in a failing test first
+
+Skip this workflow for: spikes, prototypes, throwaway scripts, and pure refactors
+already protected by existing coverage.
 
 ## Core Principles
 
@@ -51,15 +51,12 @@ ALWAYS write tests first, then implement code to make tests pass.
 - Browser automation
 - UI interactions
 
-### 4. Git Checkpoints
+### 4. Stage Tracking
 
-- If the repository is under Git, create a checkpoint commit after each TDD stage
-- Do not squash or rewrite these checkpoint commits until the workflow is complete
-- Each checkpoint commit message must describe the stage and the exact evidence captured
-- The preferred compact workflow:
-  - one commit for failing test added and RED validated
-  - one commit for minimal fix applied and GREEN validated
-  - one optional commit for refactor complete
+- Mark each TDD stage (RED / GREEN / REFACTOR) complete, recording the exact evidence
+  (test command and output)
+- Never commit automatically — offer a commit at stage boundaries only if the user has
+  asked for commits
 
 ## TDD Workflow Steps
 
@@ -111,10 +108,7 @@ This step is mandatory. Do NOT edit production code until a valid RED state is c
 
 A test that was only written but not compiled and executed does not count as RED.
 
-If under Git, create a checkpoint commit immediately after RED is confirmed:
-```
-test: add reproducer for <feature or bug>
-```
+Mark the RED stage complete (record the test command and failing output). Offer a commit only if the user has asked for commits.
 
 ### Step 4: Implement Code (GREEN)
 
@@ -126,7 +120,7 @@ export async function searchMarkets(query: string): Promise<Market[]> {
 }
 ```
 
-Stage the fix but defer the commit until GREEN is validated in Step 5.
+Do not mark this stage complete until GREEN is validated in Step 5.
 
 ### Step 5: Run Tests Again — Must Pass (GREEN)
 
@@ -137,10 +131,7 @@ npm test
 
 Rerun the same relevant test target and confirm the previously failing test is now GREEN. Only after a valid GREEN result may you proceed to refactor.
 
-If under Git, create a checkpoint commit after GREEN:
-```
-fix: <feature or bug>
-```
+Mark the GREEN stage complete. Offer a commit only if the user has asked for commits.
 
 ### Step 6: Refactor
 
@@ -150,10 +141,7 @@ Improve code quality while keeping tests green:
 - Optimize performance
 - Enhance readability
 
-If under Git, create a checkpoint commit after refactoring:
-```
-refactor: clean up after <feature or bug> implementation
-```
+Mark the REFACTOR stage complete. Offer a commit only if the user has asked for commits.
 
 ### Step 7: Verify Coverage
 
@@ -201,7 +189,8 @@ test('uses the cache', () => {})
 ### Unit Test (Jest/Vitest + React Testing Library)
 
 ```typescript
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Button } from './Button'
 
 describe('Button Component', () => {
@@ -213,13 +202,13 @@ describe('Button Component', () => {
     expect(screen.getByText('Click me')).toBeInTheDocument()
   })
 
-  it('calls onClick when clicked', () => {
+  it('calls onClick when clicked', async () => {
     // Arrange
     const handleClick = jest.fn()
     render(<Button onClick={handleClick}>Click</Button>)
 
     // Act
-    fireEvent.click(screen.getByRole('button'))
+    await userEvent.click(screen.getByRole('button'))
 
     // Assert
     expect(handleClick).toHaveBeenCalledTimes(1)
@@ -231,6 +220,8 @@ describe('Button Component', () => {
   })
 })
 ```
+
+Vitest is the default for new TypeScript projects — use `vi.fn()` / `vi.mock()` in place of `jest.fn()` / `jest.mock()`.
 
 ### API Integration Test
 
@@ -277,11 +268,11 @@ test('user can search and filter markets', async ({ page }) => {
 
   // Act: search
   await page.fill('input[placeholder="Search markets"]', 'election')
-  await page.waitForTimeout(600)  // debounce
 
-  // Assert: results
+  // Assert: web-first assertions auto-wait — never page.waitForTimeout
   const results = page.locator('[data-testid="market-card"]')
-  await expect(results).toHaveCount(5, { timeout: 5000 })
+  await expect(results.first()).toBeVisible()
+  await expect(results).toHaveCount(5)
   await expect(results.first()).toContainText('election', { ignoreCase: true })
 })
 ```
@@ -310,26 +301,19 @@ src/
 ## Mocking External Services
 
 ```typescript
-// Supabase
-jest.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => Promise.resolve({
-          data: [{ id: 1, name: 'Test Market' }],
-          error: null,
-        }))
-      }))
-    }))
-  }
+// Database client (vi.mock for Vitest)
+jest.mock('@/lib/db', () => ({
+  db: {
+    user: {
+      findUnique: jest.fn(() => Promise.resolve({ id: 1, name: 'Test User' })),
+    },
+  },
 }))
 
-// Redis
-jest.mock('@/lib/redis', () => ({
-  searchMarketsByVector: jest.fn(() => Promise.resolve([
-    { slug: 'test-market', similarity_score: 0.95 }
-  ])),
-  checkRedisHealth: jest.fn(() => Promise.resolve({ connected: true }))
+// External service client
+jest.mock('@/lib/payments', () => ({
+  createCharge: jest.fn(() => Promise.resolve({ id: 'ch_123', status: 'succeeded' })),
+  checkHealth: jest.fn(() => Promise.resolve({ connected: true })),
 }))
 ```
 
@@ -338,7 +322,7 @@ jest.mock('@/lib/redis', () => ({
 ```json
 {
   "jest": {
-    "coverageThresholds": {
+    "coverageThreshold": {
       "global": {
         "branches": 80,
         "functions": 80,
@@ -375,15 +359,6 @@ test('updates user', () => {
   const user = createTestUser()  // independent setup
 })
 ```
-
-## Success Metrics
-
-- 80%+ code coverage achieved
-- All tests passing (green)
-- No skipped or disabled tests
-- Fast test execution (< 30s for unit tests)
-- E2E tests cover critical user flows
-- Tests catch bugs before production
 
 ---
 

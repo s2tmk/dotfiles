@@ -1,6 +1,6 @@
 ---
 name: docker-patterns
-description: Docker and Docker Compose patterns for multi-stage Dockerfiles, local dev stacks (Postgres/Redis/Mailpit), custom networks, volume strategies, container security hardening (non-root user, read-only fs, capability dropping), secret management, and debugging commands. Load when containerizing an app or setting up a local dev environment.
+description: Docker and Docker Compose patterns for multi-stage Dockerfiles, local dev stacks (Postgres/Redis/Mailpit), custom networks, volume strategies, container security hardening (non-root user, read-only fs, capability dropping), secret management, and debugging commands. Load for Docker, コンテナ化, 開発環境構築, Docker Compose, コンテナセキュリティ, containerizing an app or setting up a local dev environment.
 origin: ECC
 ---
 
@@ -46,7 +46,7 @@ services:
     command: npm run dev
 
   db:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     ports:
       - "5432:5432"
     environment:
@@ -102,7 +102,7 @@ FROM node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build && npm prune --production
+RUN npm run build && npm prune --omit=dev
 
 # Stage: production (minimal image)
 FROM node:22-alpine AS production
@@ -269,7 +269,7 @@ services:
     environment:
       - API_KEY                  # Inherits from host environment
 
-# GOOD: Docker secrets (Swarm mode)
+# GOOD: file-based secrets (Compose v2 supports these without Swarm)
 secrets:
   db_password:
     file: ./secrets/db_password.txt
@@ -346,8 +346,9 @@ docker network inspect <project>_default
 ## Anti-Patterns
 
 ```
-# BAD: Using docker compose in production without orchestration
-# Use Kubernetes, ECS, or Docker Swarm for production multi-container workloads
+# SCALE THRESHOLD: docker compose in production is legitimate on a single VM
+# for solo/small products; move to ECS or Kubernetes when you need multi-node
+# scaling or high availability
 
 # BAD: Storing data in containers without volumes
 # Containers are ephemeral -- all data lost on restart without volumes

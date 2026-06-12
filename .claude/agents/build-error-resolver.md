@@ -46,7 +46,7 @@ For each error:
 |-------|-----|
 | `implicitly has 'any' type` | Add type annotation |
 | `Object is possibly 'undefined'` | Optional chaining `?.` or null check |
-| `Property does not exist` | Add to interface or use optional `?` |
+| `Property does not exist` | Model the type correctly — fix or extend the interface to match the actual runtime shape. Do not add `?` just to silence the error; optionalizing reality away hides bugs |
 | `Cannot find module` | Check tsconfig paths, install package, or fix import path |
 | `Type 'X' not assignable to 'Y'` | Parse/convert type or fix the type |
 | `Generic constraint` | Add `extends { ... }` |
@@ -71,26 +71,37 @@ For each error:
 - Change logic flow (unless fixing error)
 - Optimize performance or style
 
-## Priority Levels
+## Hard Prohibitions
+
+NEVER, under any circumstances:
+- `as any` or other type assertions that erase type information
+- `@ts-ignore`
+- `@ts-expect-error` — except with a written justification and a tracking comment (issue/TODO reference) at the suppression site
+- `eslint-disable` in any form
+- Loosening tsconfig or ESLint configs (e.g. turning off `strict`, downgrading rules) to make checks pass
+- Deleting lockfiles (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
+
+Fix the code so the types model reality — do not silence the checker.
+
+## Urgency Levels
 
 | Level | Symptoms | Action |
 |-------|----------|--------|
-| CRITICAL | Build completely broken, no dev server | Fix immediately |
-| HIGH | Single file failing, new code type errors | Fix soon |
-| MEDIUM | Linter warnings, deprecated APIs | Fix when possible |
+| P0 | Build completely broken, no dev server | Fix immediately |
+| P1 | Single file failing, new code type errors | Fix soon |
+| P2 | Linter warnings, deprecated APIs | Fix when possible |
 
 ## Quick Recovery
 
 ```bash
-# Clear all caches
+# Clear build caches
 rm -rf .next node_modules/.cache && npm run build
 
-# Reinstall dependencies
-rm -rf node_modules package-lock.json && npm install
-
-# Fix ESLint auto-fixable
-npx eslint . --fix
+# Clean reinstall from the lockfile (never delete the lockfile)
+npm ci
 ```
+
+If an ESLint autofix is needed, scope it to the files in the failing diff (e.g. `npx eslint --fix path/to/changed-file.ts`) — never run a repo-wide `--fix` sweep.
 
 ## Success Metrics
 
@@ -100,10 +111,15 @@ npx eslint . --fix
 - Minimal lines changed (< 5% of affected file)
 - Tests still passing
 
-## When NOT to Use
+## Report Contract
 
-- Code needs refactoring → use `refactor-cleaner`
-- Architecture changes needed → use `architect`
-- New features required → use `planner`
-- Tests failing → use `tdd-guide`
-- Security issues → use `security-reviewer`
+After fixing, end your report with:
+1. **Root cause** — one line
+2. **Files changed** — the full list
+3. **Why minimal** — why this fix is the smallest change that addresses the root cause
+
+No PASS/FAIL verdict — that vocabulary belongs to the reviewer agents.
+
+## Out of Scope
+
+If the task turns out to need refactoring, architecture changes, new features, or test-failure debugging, stop and hand back to the caller stating what is needed — do not attempt it here. Security issues → recommend `security-reviewer` to the caller.

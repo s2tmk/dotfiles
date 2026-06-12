@@ -14,72 +14,14 @@ Cross-framework UI patterns: CSS, layout, accessibility, animation, and form han
 
 - Styling, layout, or responsive design decisions
 - Accessibility: keyboard navigation, ARIA, focus management
-- Animation with Framer Motion or CSS transitions
+- Animation with Motion (formerly Framer Motion) or CSS transitions
 - Form validation and error display patterns
 - Composing UI components without framework-specific logic
 - Performance: code splitting, virtualization, lazy loading
 
 ## Component Composition Patterns
 
-### Compound Components
-
-Share internal state across related sub-components via Context:
-
-```tsx
-interface TabsContextValue {
-  activeTab: string
-  setActiveTab: (tab: string) => void
-}
-
-const TabsContext = createContext<TabsContextValue | undefined>(undefined)
-
-export function Tabs({ children, defaultTab }: {
-  children: React.ReactNode
-  defaultTab: string
-}) {
-  const [activeTab, setActiveTab] = useState(defaultTab)
-  return (
-    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
-      {children}
-    </TabsContext.Provider>
-  )
-}
-
-export function Tab({ id, children }: { id: string; children: React.ReactNode }) {
-  const context = useContext(TabsContext)
-  if (!context) throw new Error('Tab must be used within Tabs')
-  return (
-    <button
-      className={context.activeTab === id ? 'active' : ''}
-      onClick={() => context.setActiveTab(id)}
-    >
-      {children}
-    </button>
-  )
-}
-```
-
-### Card Composition
-
-```tsx
-export function Card({ children, variant = 'default' }: CardProps) {
-  return <div className={`card card-${variant}`}>{children}</div>
-}
-
-export function CardHeader({ children }: { children: React.ReactNode }) {
-  return <div className="card-header">{children}</div>
-}
-
-export function CardBody({ children }: { children: React.ReactNode }) {
-  return <div className="card-body">{children}</div>
-}
-
-// Usage
-<Card>
-  <CardHeader>Title</CardHeader>
-  <CardBody>Content</CardBody>
-</Card>
-```
+React composition patterns (compound components, Card composition, etc.) live in `react-patterns` — see that skill.
 
 ## CSS & Layout
 
@@ -127,22 +69,22 @@ With Tailwind the scale maps to `p-1` (4px) through `p-16` (64px) — never use 
 
 Do not define an independent scale here. Use the 1.25 ("Major Third") ratio scale from `ux-ui-design/SKILL.md` and map it to Tailwind utility classes.
 
-> **Note:** Tailwind's built-in scale does NOT align exactly with the 1.25-ratio scale above 20px (e.g. `text-2xl` = 24px vs token 25px). For production, use CSS custom properties (`var(--text-xl)` etc.) or extend `fontSize` in the Tailwind config — built-in classes above `text-xl` are approximations only.
+> **Note:** Tailwind's built-in scale does NOT align exactly with the 1.25-ratio tokens above 20px (e.g. `text-2xl` = 24px vs token 25px). **Named-size approximations (`text-2xl` = 24px, `text-3xl` = 30px, etc.) explicitly count as on-scale.** For pixel-exact fidelity, extend `fontSize` in the Tailwind config with the CSS custom properties (`var(--text-xl)` etc.).
 
 | Token (ux-ui-design) | Value | Tailwind class |
 |---|---|---|
-| `--text-xs`   | 0.64rem  (~10px) | `text-[0.64rem]` or custom token |
-| `--text-sm`   | 0.8rem   (~13px) | `text-[0.8rem]`  or custom token |
+| `--text-xs`   | 0.64rem  (~10px) | `text-xs` (12px named approximation) or custom token |
+| `--text-sm`   | 0.8rem   (~13px) | `text-sm` (14px named approximation) or custom token |
 | `--text-base` | 1rem     (16px)  | `text-base` |
 | `--text-lg`   | 1.25rem  (20px)  | `text-xl` |
-| `--text-xl`   | 1.563rem (25px)  | `text-2xl` (≈ 24px, use custom token for exactness) |
-| `--text-2xl`  | 1.953rem (31px)  | `text-3xl` (≈ 30px, use custom token for exactness) |
-| `--text-3xl`  | 2.441rem (39px)  | `text-4xl` (≈ 36px, use custom token for exactness) |
-| `--text-4xl`  | 3.052rem (49px)  | `text-5xl` (≈ 48px, use custom token for exactness) |
+| `--text-xl`   | 1.563rem (25px)  | `text-2xl` (24px named approximation, on-scale) |
+| `--text-2xl`  | 1.953rem (31px)  | `text-3xl` (30px named approximation, on-scale) |
+| `--text-3xl`  | 2.441rem (39px)  | `text-4xl` (36px named approximation, on-scale) |
+| `--text-4xl`  | 3.052rem (49px)  | `text-5xl` (48px named approximation, on-scale) |
 
-For pixel-exact fidelity, extend Tailwind's `fontSize` config with the CSS custom properties from `ux-ui-design`. Never use arbitrary sizes like `text-[13px]` or `text-[17px]` that fall outside the scale.
+Never use arbitrary sizes like `text-[13px]` or `text-[0.8rem]` — stick to named sizes or the custom tokens.
 
-Line heights: headings use `leading-tight` (1.2), body copy uses `leading-relaxed` (1.75).
+Line heights: headings `leading-tight` (1.2); EN body 1.5–1.6 (`leading-normal`); JA body text 1.7–1.9 (kanji needs more leading — see ux-ui-design's Japanese Typography section); long-form EN reading `leading-relaxed` (1.75).
 
 ### Color & Contrast
 
@@ -236,74 +178,94 @@ Virtualize when list exceeds ~50 items with non-trivial rows.
 
 ### Keyboard Navigation
 
-```tsx
-export function Dropdown({ options, onSelect }: DropdownProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
+Menu button pattern (APG): a button that opens a menu of actions, with roving focus on the items. For a select-like value picker, use the full APG combobox pattern (`role="combobox"` + `aria-activedescendant` + `role="listbox"`) instead — never put `role="combobox"` on a plain wrapper div.
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+```tsx
+export function MenuButton({ options, onSelect }: MenuButtonProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const menuId = useId()
+
+  const closeAndRefocus = () => {
+    setIsOpen(false)
+    buttonRef.current?.focus()
+  }
+
+  const handleItemKeyDown = (e: React.KeyboardEvent, index: number) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
-        setActiveIndex(i => Math.min(i + 1, options.length - 1))
+        itemRefs.current[Math.min(index + 1, options.length - 1)]?.focus()
         break
       case 'ArrowUp':
         e.preventDefault()
-        setActiveIndex(i => Math.max(i - 1, 0))
-        break
-      case 'Enter':
-        e.preventDefault()
-        onSelect(options[activeIndex])
-        setIsOpen(false)
+        itemRefs.current[Math.max(index - 1, 0)]?.focus()
         break
       case 'Escape':
-        setIsOpen(false)
+        closeAndRefocus()
         break
     }
   }
 
   return (
-    <div
-      role="combobox"
-      aria-expanded={isOpen}
-      aria-haspopup="listbox"
-      onKeyDown={handleKeyDown}
-    >
-      {/* Dropdown content */}
-    </div>
+    <>
+      <button
+        ref={buttonRef}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls={menuId}
+        onClick={() => setIsOpen(o => !o)}
+      >
+        Actions
+      </button>
+      {isOpen && (
+        <div role="menu" id={menuId}>
+          {options.map((option, i) => (
+            <button
+              key={option.value}
+              ref={el => { itemRefs.current[i] = el }}
+              role="menuitem"
+              tabIndex={i === 0 ? 0 : -1}
+              onKeyDown={e => handleItemKeyDown(e, i)}
+              onClick={() => { onSelect(option); closeAndRefocus() }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </>
   )
 }
 ```
 
-### Focus Management
+### Focus Management — Modals
+
+Lead with native `<dialog>` + `showModal()`: it gives a built-in focus trap, top-layer rendering, and ESC handling for free.
 
 ```tsx
 export function Modal({ isOpen, onClose, children }: ModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null)
-  const previousFocusRef = useRef<HTMLElement | null>(null)
+  const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
-    if (isOpen) {
-      previousFocusRef.current = document.activeElement as HTMLElement
-      modalRef.current?.focus()
-    } else {
-      previousFocusRef.current?.focus()
-    }
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (isOpen && !dialog.open) dialog.showModal()
+    else if (!isOpen && dialog.open) dialog.close()
   }, [isOpen])
 
-  return isOpen ? (
-    <div
-      ref={modalRef}
-      role="dialog"
-      aria-modal="true"
-      tabIndex={-1}
-      onKeyDown={e => e.key === 'Escape' && onClose()}
-    >
+  return (
+    <dialog ref={dialogRef} onClose={onClose}>
       {children}
-    </div>
-  ) : null
+    </dialog>
+  )
 }
 ```
+
+Fallback (only when `<dialog>` is unavailable): a manual `role="dialog"` + `aria-modal="true"` div that saves and restores focus and closes on Escape. Caveat: that version does NOT trap focus — Tab can escape the modal — so you must add a focus trap (e.g. the `focus-trap` package) yourself.
+
+For non-modal overlays (tooltips, popovers, menus), prefer the Popover API (`popover` attribute + `popovertarget`) over hand-rolled show/hide and dismiss logic.
 
 ### ARIA Essentials
 
@@ -313,10 +275,12 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 - Live regions for dynamic content: `aria-live="polite"` (errors, status) or `"assertive"` (alerts)
 - Semantic HTML first: `<button>`, `<nav>`, `<main>`, `<section>`, `<article>` before adding `role`
 
-## Animation Patterns (Framer Motion)
+## Animation Patterns (Motion)
+
+> The package was renamed: `framer-motion` → `motion`. Import from `'motion/react'`; only legacy codebases still pinned to `framer-motion` keep the old import path.
 
 ```tsx
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'motion/react'
 
 // List enter/exit
 export function AnimatedList({ items }: { items: Item[] }) {

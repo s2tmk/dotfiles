@@ -1,6 +1,6 @@
 ---
 name: deployment-patterns
-description: Deployment strategies (rolling/blue-green/canary), CI/CD pipeline patterns with GitHub Actions, multi-stage Dockerfiles for Node/Go/Python, health check endpoints and Kubernetes probes, twelve-factor config validation, rollback procedures, and a production readiness checklist. Load when setting up CI/CD, planning a release, or containerizing for production.
+description: Deployment strategies (rolling/blue-green/canary), CI/CD pipeline patterns with GitHub Actions, multi-stage Dockerfiles for Node/Go/Python, health check endpoints and Kubernetes probes, twelve-factor config validation, rollback procedures, and a production readiness checklist. Load for デプロイ, リリース, CI/CD, パイプライン, ロールバック, 本番リリース, setting up CI/CD, planning a release, or containerizing for production.
 origin: ECC
 ---
 
@@ -81,14 +81,14 @@ v2: 100% of traffic
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --production=false
+RUN npm ci --include=dev
 
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
-RUN npm prune --production
+RUN npm prune --omit=dev
 
 FROM node:22-alpine AS runner
 WORKDIR /app
@@ -112,14 +112,14 @@ CMD ["node", "dist/server.js"]
 ### Multi-Stage Dockerfile (Go)
 
 ```dockerfile
-FROM golang:1.22-alpine AS builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /server ./cmd/server
 
-FROM alpine:3.19 AS runner
+FROM alpine:3.21 AS runner
 RUN apk --no-cache add ca-certificates
 RUN adduser -D -u 1001 appuser
 USER appuser
@@ -164,6 +164,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read              # least privilege by default
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true    # supersede stale runs on the same ref
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -187,6 +194,9 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write         # push to ghcr.io
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -195,7 +205,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v5
+      - uses: docker/build-push-action@v6
         with:
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
@@ -232,12 +242,12 @@ Merged to main:
 ### Health Check Endpoint
 
 ```typescript
-// Simple health check
+// Bare process-only health check — wire this to the liveness probe
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Detailed health check (for internal monitoring)
+// Detailed dependency check — wire this to the readiness probe
 app.get("/health/detailed", async (req, res) => {
   const checks = {
     database: await checkDatabase(),
@@ -259,6 +269,9 @@ app.get("/health/detailed", async (req, res) => {
 ### Kubernetes Probes
 
 ```yaml
+# Liveness uses the bare process-only endpoint; readiness checks dependencies.
+# Why: if the DB goes down, a dependency-checking liveness probe restarts every
+# pod (restart storm); readiness only pulls pods from rotation until it recovers.
 livenessProbe:
   httpGet:
     path: /health
@@ -269,7 +282,7 @@ livenessProbe:
 
 readinessProbe:
   httpGet:
-    path: /health
+    path: /health/detailed
     port: 3000
   initialDelaySeconds: 5
   periodSeconds: 10
@@ -333,7 +346,9 @@ vercel rollback
 # Railway: redeploy previous commit
 railway up --commit <previous-sha>
 
-# Database: rollback migration (if reversible)
+# Database: `migrate resolve --rolled-back` only updates Prisma's migration ledger —
+# it does NOT revert the schema. A real rollback is a new forward migration that
+# undoes the change (expand/contract pattern).
 npx prisma migrate resolve --rolled-back <migration-name>
 ```
 

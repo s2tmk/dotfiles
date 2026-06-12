@@ -27,7 +27,7 @@ A request like "add CSV export" is a proposed solution, not a requirement. The r
 
 ## Intake from bizdev-strategy
 
-If this skill is triggered from a bizdev-strategy handoff, load that document's Section 5 feature proposals and Section 2 evidence first; every feature in the Requirements Brief must cite its evidence source from that document. If a bizdev-strategy document exists for this product, do not accept undocumented feature requests.
+If this skill is triggered from a bizdev-strategy handoff, load that document (`docs/strategy/<product>-strategy.md`) — Section 5 feature proposals and Section 2 evidence — first; every feature in the Requirements Brief must cite its evidence source from that document. If a bizdev-strategy document exists for this product, do not accept undocumented feature requests.
 
 ## Discovery Question Checklist
 
@@ -77,7 +77,7 @@ These questions are mandatory for any new product or major feature — skip only
 - **Monetization model**: How does this product make money? (subscription, usage-based, one-time, freemium, B2B seat license, marketplace take rate, other)
 - **Paying customer vs. end user**: Are the people who pay and the people who use the same? If not, who is each, and whose needs take priority in a conflict?
 - **Competitive alternative**: What does the user do today instead? Include "do nothing" as an explicit option — why would they switch?
-- **Regulatory / compliance constraints**: Any GDPR, HIPAA, SOC 2, financial regulation, or data-residency requirement that constrains design or implementation?
+- **Regulatory / compliance constraints** (JP defaults): 個人情報保護法 (APPI) for personal data; 特定商取引法 for e-commerce disclosures; 資金決済法 for payments/points/prepaid value; 電気通信事業法 外部送信規律 for cookie/analytics consent; インボイス制度 for invoicing. Add GDPR/CCPA/SOC 2 when targeting overseas customers.
 - **Time-to-market pressure**: Is there a deadline, launch window, or competitive event that forces scope reduction? What is the minimum viable scope for that date?
 
 ### 8. Integration Constraints
@@ -100,21 +100,8 @@ Separate concerns at natural seams:
 
 Avoid mixing these layers. A UI component should not contain SQL; a repository should not contain business logic.
 
-### YAGNI — Build Only Evidenced Needs
-Build what the confirmed requirements demand. Do not add:
-- "We might need this later" abstractions
-- Config flags for variations that don't exist yet
-- Generic frameworks for a single known use case
-
-Add generalization only when you have a second concrete use case that would benefit.
-
-### DRY Without Speculative Abstraction
-Extract duplication only when:
-- The same logic appears in 2+ places already (not "it might appear")
-- The abstraction name is obvious from the use cases
-- The abstraction doesn't require a complex interface to cover the edge cases
-
-Premature DRY creates wrong abstractions that are harder to change than the duplication they replaced.
+### YAGNI & DRY
+Apply CLAUDE.md Core Principles: build only what confirmed requirements demand; extract duplication only once it is real, not speculative.
 
 ### Document Decisions + Alternatives Briefly
 For each non-trivial design decision, record:
@@ -130,6 +117,8 @@ This goes in a DECISIONS.md or inline in the requirements brief, not just in Sla
 
 After discovery, produce a short brief the user confirms **before implementation starts**.
 
+**MUST**: write the brief to `docs/requirements/<feature>-brief.md` — downstream gates look for it at this path.
+
 ```markdown
 ## Requirements Brief: <Feature Name>
 
@@ -138,8 +127,8 @@ After discovery, produce a short brief the user confirms **before implementation
 **Users**: [Persona(s), role, frequency of use]
 
 **In Scope**:
-- [Concrete deliverable 1]
-- [Concrete deliverable 2]
+- [Concrete deliverable 1] — Evidence: [source document + section, e.g. "market-research §3, n=200 survey"]
+- [Concrete deliverable 2] — Evidence: [...]
 
 **Explicitly Out of Scope**:
 - [What we are not doing and why]
@@ -166,9 +155,11 @@ After discovery, produce a short brief the user confirms **before implementation
 
 **Design Decisions**:
 - [Decision made, alternatives considered, rationale]
+
+Confirmed by user: [write only after explicit user confirmation — then: yes (<date>)]
 ```
 
-Get explicit confirmation on this brief before architecture, code, or detailed design. A "yes this looks right" from the user is the gate.
+Get explicit confirmation on this brief before architecture, code, or detailed design. A "yes this looks right" from the user is the gate. Only after that confirmation, write the final line `Confirmed by user: yes (<date>)` — never pre-fill it. Downstream gates check for the exact key `Confirmed by user:`.
 
 ### Delivery
 

@@ -30,8 +30,10 @@ session_dir() {
 # Walk up from a file to the nearest directory containing $2; echoes dir or fails.
 nearest_up() {
   local d
+  [ -n "${1:-}" ] || return 1
   d=$(dirname "$1")
-  while [ -n "$d" ] && [ "$d" != "/" ]; do
+  # "." guard: dirname converges to "." (never "/") for relative/empty input
+  while [ -n "$d" ] && [ "$d" != "/" ] && [ "$d" != "." ]; do
     [ -e "$d/$2" ] && { echo "$d"; return 0; }
     d=$(dirname "$d")
   done

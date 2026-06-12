@@ -10,9 +10,7 @@ paths:
 ## PEP 8 and Formatting
 
 - Follow PEP 8 conventions for all code.
-- Use **ruff** for linting (replaces flake8/pylint).
-- Use **black** for code formatting.
-- Use **isort** for import sorting.
+- Use **ruff** for both linting and formatting (`ruff check` + `ruff format`) — one tool replaces flake8/pylint/black/isort.
 
 ## Type Hints
 
@@ -65,12 +63,8 @@ api_key = os.environ["OPENAI_API_KEY"]  # raises KeyError if missing
 
 ## Testing Conventions
 
-- Use **pytest** as the testing framework.
-- Use `pytest.mark` to categorize tests (`unit`, `integration`, `e2e`).
-- Run coverage with: `pytest --cov=src --cov-report=term-missing`
-- Minimum 80% coverage.
-- Arrange-Act-Assert structure for all tests.
-- Test names describe the behavior: `test_returns_empty_list_when_no_users_match`.
+- Use **pytest** as the testing framework; categorize with `pytest.mark` (`unit`, `integration`, `e2e`).
+- Coverage targets, AAA structure, and test naming: follow the `tdd-workflow` skill.
 
 ## Duck Typing via Protocol
 

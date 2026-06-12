@@ -54,7 +54,8 @@ type State =
 
 ## Immutability
 
-Always create new objects; never mutate existing ones:
+Do not mutate shared or passed-in values; return new objects instead. Local mutation is
+fine while constructing a value you own (building an array in a loop, sorting a local copy):
 
 ```typescript
 // WRONG
@@ -91,25 +92,15 @@ Use Zod (or equivalent schema library) at system boundaries. Infer types from th
 ```typescript
 import { z } from 'zod'
 
-const userSchema = z.object({ email: z.string().email(), age: z.number().int().min(0) })
+const userSchema = z.object({ email: z.email(), age: z.number().int().min(0) })  // Zod 4: z.email()
 type UserInput = z.infer<typeof userSchema>
 const validated: UserInput = userSchema.parse(rawInput)
 ```
 
-## Naming
+## Exports
 
-- Variables and functions: `camelCase`
-- Booleans: `is`, `has`, `should`, or `can` prefix
-- Interfaces, types, components: `PascalCase`
-- Constants: `UPPER_SNAKE_CASE`
-- Custom hooks: `camelCase` with `use` prefix
+Prefer named exports over default exports for non-component modules.
 
-## Import Hygiene
+## Logging
 
-- No unused imports — remove them.
-- Group: external packages, then internal modules, then relative imports (separated by blank lines).
-- Prefer named exports over default exports for non-component modules.
-
-## No `console.log` in Production Code
-
-Use a proper logging library. `console.log` statements left in production code are flagged as HIGH by code-reviewer.
+No bare `console.log` strings in production code. Structured JSON to stdout via a logger (pino or equivalent) is the standard. Stray `console.log` is flagged as HIGH by code-reviewer.

@@ -20,39 +20,9 @@
       "Read(**/*.pem)",
       "Read(**/*.key)"
     ],
-    "defaultMode": "auto"
+    "defaultMode": "acceptEdits"
   },
-  "model": "claude-opus-4-8",
-  "statusLine": {
-    "type": "command",
-    "command": "bash ~/.claude/statusline-command.sh"
-  },
-  "enabledPlugins": {
-    "codex@openai-codex": true,
-    "ecc@ecc": false,
-    "figma@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "openai-codex": {
-      "source": {
-        "source": "github",
-        "repo": "openai/codex-plugin-cc"
-      }
-    },
-    "ecc": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/affaan-m/ECC.git"
-      }
-    },
-    "claude-plugins-official": {
-      "source": {
-        "source": "github",
-        "repo": "anthropics/claude-plugins-official"
-      }
-    }
-  },
-  "language": "japanese",
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "UserPromptSubmit": [
       {
@@ -133,6 +103,36 @@
       }
     ]
   },
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/statusline-command.sh"
+  },
+  "enabledPlugins": {
+    "codex@openai-codex": true,
+    "ecc@ecc": false,
+    "figma@claude-plugins-official": true
+  },
+  "extraKnownMarketplaces": {
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
+      }
+    },
+    "ecc": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/affaan-m/ECC.git"
+      }
+    },
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "language": "japanese",
   "sandbox": {
     "enabled": true,
     "allowUnsandboxedCommands": false,
@@ -140,6 +140,8 @@
       "allowedDomains": [
         "github.com",
         "*.npmjs.org",
+        "pypi.org",
+        "files.pythonhosted.org",
         "undraw.co",
         "unsplash.com",
         "images.unsplash.com",

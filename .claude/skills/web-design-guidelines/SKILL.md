@@ -11,22 +11,26 @@ metadata:
 
 Review files for compliance with Web Interface Guidelines.
 
+Boundary: this is a user-invoked audit; the shipping gate is design-reviewer.
+
 ## How It Works
 
-1. Fetch the latest guidelines from the source URL below
+1. Fetch the guidelines from the pinned source URL below
 2. Read the specified files (or prompt user for files/pattern)
 3. Check against all rules in the fetched guidelines
 4. Output findings in the terse `file:line` format
 
 ## Guidelines Source
 
-Fetch fresh guidelines before each review:
+Fetch the guidelines from this pinned commit before each review:
 
 ```
-https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md
+https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/4e799d45c17aec1498c269287a83b9dba22b966b/command.md
 ```
 
-Use WebFetch to retrieve the latest rules. The fetched content contains all the rules and output format instructions.
+The ref is pinned (commit on `main` as of 2026-06-12) so the rule set does not change underneath reviews. Update the pin deliberately: review the upstream diff first, then replace the hash. Do not switch back to tracking `main`.
+
+Use WebFetch to retrieve the rules. The fetched content contains all the rules and output format instructions.
 
 ## Usage
 

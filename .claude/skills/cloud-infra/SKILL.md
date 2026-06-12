@@ -1,12 +1,19 @@
 ---
 name: cloud-infra
-description: Professional AWS/GCP/Cloudflare infrastructure design and operations: IaC-first (Terraform/CDK), least-privilege IAM, multi-account separation, VPC network segmentation, secrets management, observability (structured logs/metrics/SLOs/alerts), backup and DR with RTO/RPO targets, cost guardrails, zero-downtime deploys, and a pre-deploy security checklist. Load when designing or operating cloud infra on AWS, GCP, Cloudflare, Terraform, IAM, VPC, serverless, or any deployment infrastructure.
+description: Professional AWS/GCP/Cloudflare infrastructure design and operations: IaC-first (Terraform/CDK), least-privilege IAM, multi-account separation, VPC network segmentation, secrets management, observability (structured logs/metrics/SLOs/alerts), backup and DR with RTO/RPO targets, cost guardrails, zero-downtime deploys, and a pre-deploy security checklist. Load for インフラ設計, クラウド構築, 監視, バックアップ, 障害対策, コスト管理, designing or operating cloud infra on AWS, GCP, Cloudflare, Terraform, IAM, VPC, サーバーレス, serverless, or any deployment infrastructure.
 origin: Local
 ---
 
 # Cloud Infrastructure Design & Operations
 
 Professional-grade patterns for AWS, GCP, and Cloudflare. IaC-first. Security by default.
+
+## Start PaaS-First
+
+For solo or pre-PMF products, the correct starting stack is Vercel / Cloudflare Workers +
+Supabase / Neon + managed queues. Graduate to VPC / Terraform / multi-account only when
+compliance, private networking, more than 2 engineers, or cost at scale demands it.
+The enterprise patterns below are the graduation target, not the starting point.
 
 ## When to Activate
 
@@ -29,16 +36,16 @@ All infrastructure changes go through code. No manual console edits in productio
 ```hcl
 # Terraform example: enforce remote state + backend
 terraform {
-  required_version = ">= 1.6"
+  required_version = ">= 1.10"
   required_providers {
-    aws = { source = "hashicorp/aws", version = "~> 5.0" }
+    aws = { source = "hashicorp/aws", version = "~> 6.0" }
   }
   backend "s3" {
-    bucket         = "my-org-tfstate"
-    key            = "prod/infra.tfstate"
-    region         = "ap-northeast-1"
-    encrypt        = true
-    dynamodb_table = "tfstate-locks"  # prevent concurrent applies
+    bucket       = "my-org-tfstate"
+    key          = "prod/infra.tfstate"
+    region       = "ap-northeast-1"
+    encrypt      = true
+    use_lockfile = true  # S3-native locking; DynamoDB-based locking is deprecated
   }
 }
 ```
@@ -159,15 +166,15 @@ Security group rules:
 ### Cloudflare
 
 ```hcl
-resource "cloudflare_access_application" "admin" {
+resource "cloudflare_zero_trust_access_application" "admin" {
   zone_id          = var.zone_id
   name             = "Admin Panel"
   domain           = "admin.example.com"
   session_duration = "8h"
 }
 
-resource "cloudflare_access_policy" "admin_email" {
-  application_id = cloudflare_access_application.admin.id
+resource "cloudflare_zero_trust_access_policy" "admin_email" {
+  application_id = cloudflare_zero_trust_access_application.admin.id
   zone_id        = var.zone_id
   name           = "Allow org email"
   decision       = "allow"
@@ -309,7 +316,7 @@ Define RTO and RPO before choosing the DR strategy.
 | Warm Standby | Minutes | Seconds | High |
 | Multi-site Active/Active | ~0 | ~0 | Very high |
 
-For most SaaS products: Warm Standby is the right balance.
+Default: Backup & Restore + Multi-AZ until revenue justifies more. Choose Warm Standby only when the cost of downtime exceeds the ~2x infrastructure cost.
 
 ```hcl
 # RDS automated backups + cross-region replication
@@ -321,10 +328,11 @@ resource "aws_db_instance" "main" {
   multi_az                = true          # synchronous standby in another AZ
 }
 
-resource "aws_db_snapshot_copy" "cross_region" {
-  source_db_snapshot_identifier = aws_db_instance.main.latest_restorable_time
-  target_db_snapshot_identifier = "prod-db-backup-${timestamp()}"
-  destination_region            = "ap-northeast-3"  # separate region
+# Cross-region replication of automated backups — created in the destination region
+resource "aws_db_instance_automated_backups_replication" "cross_region" {
+  provider               = aws.dr  # provider alias configured for the DR region
+  source_db_instance_arn = aws_db_instance.main.arn
+  retention_period       = 14
 }
 ```
 

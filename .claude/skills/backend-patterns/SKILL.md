@@ -1,6 +1,6 @@
 ---
 name: backend-patterns
-description: Backend architecture patterns for Node.js/TypeScript APIs: repository pattern, service layer, middleware, N+1 query prevention, Redis caching, pagination, centralized error handling, JWT auth, RBAC, rate limiting (shared-store only), structured logging, and background job queues. Load when building or reviewing server-side code.
+description: Backend architecture patterns for Node.js/TypeScript APIs: repository pattern, service layer, middleware, N+1 query prevention, Redis caching, pagination, centralized error handling, JWT auth, RBAC, rate limiting (shared-store only), structured logging, and background job queues. Load for バックエンド設計, API実装, サーバーサイド, キャッシュ, 認証, レートリミット, building or reviewing server-side code.
 origin: ECC
 ---
 
@@ -36,6 +36,12 @@ DELETE /api/markets/:id             # Delete resource
 // Query parameters for filtering, sorting, pagination
 GET /api/markets?status=active&sort=volume&limit=20&offset=0
 ```
+
+### When to Skip These Patterns
+
+Single data source + small app → plain query modules are enough (YAGNI). Introduce the
+repository/service layers below (and the caching decorator further down) only at the
+second data source, the second consumer, or when test isolation demands it.
 
 ### Repository Pattern
 
@@ -87,13 +93,13 @@ class MarketService {
 export function withAuth(handler: NextApiHandler): NextApiHandler {
   return async (req, res) => {
     const token = req.headers.authorization?.replace('Bearer ', '')
-    if (!token) return res.status(401).json({ error: 'Unauthorized' })
+    if (!token) return res.status(401).json({ error: { code: 'unauthorized', message: 'Missing token' } })
 
     try {
       req.user = await verifyToken(token)
       return handler(req, res)
     } catch {
-      return res.status(401).json({ error: 'Invalid token' })
+      return res.status(401).json({ error: { code: 'unauthorized', message: 'Invalid token' } })
     }
   }
 }
@@ -218,11 +224,15 @@ Caching principles:
 
 ### Centralized Error Handler
 
+Error responses follow the canonical envelope defined in `api-design`:
+`{ "error": { "code", "message", "details?" } }`. Validation failures → 422; malformed syntax → 400.
+
 ```typescript
 class ApiError extends Error {
   constructor(
     public statusCode: number,
     public message: string,
+    public code: string = 'api_error',
     public isOperational = true,
   ) {
     super(message)
@@ -232,18 +242,26 @@ class ApiError extends Error {
 
 export function errorHandler(error: unknown): Response {
   if (error instanceof ApiError) {
-    return NextResponse.json({ success: false, error: error.message }, { status: error.statusCode })
+    return NextResponse.json(
+      { error: { code: error.code, message: error.message } },
+      { status: error.statusCode },
+    )
   }
   if (error instanceof z.ZodError) {
     return NextResponse.json({
-      success: false,
-      error: 'Validation failed',
-      details: error.errors,
-    }, { status: 400 })
+      error: {
+        code: 'validation_error',
+        message: 'Request validation failed',
+        details: error.issues,
+      },
+    }, { status: 422 })
   }
 
-  logger.error('Unexpected error', { error })  // structured logger — never console.* in production
-  return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 })
+  logger.error({ err: error }, 'Unexpected error')
+  return NextResponse.json(
+    { error: { code: 'internal_error', message: 'Internal server error' } },
+    { status: 500 },
+  )
 }
 ```
 
@@ -258,8 +276,12 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
       return await fn()
     } catch (err) {
       lastError = err as Error
+      // Never retry client errors (4xx) — they will fail identically every time
+      if (err instanceof ApiError && err.statusCode >= 400 && err.statusCode < 500) throw err
       if (i < maxRetries - 1) {
-        await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000))
+        const backoff = Math.pow(2, i) * 1000
+        const jitter = Math.random() * backoff  // jitter avoids thundering-herd retries
+        await new Promise(r => setTimeout(r, backoff + jitter))
       }
     }
   }
@@ -269,6 +291,10 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
 ```
 
 ## Authentication & Authorization
+
+Decision rule: default to managed auth (Supabase Auth / Clerk / Auth0 / NextAuth) for new
+products; hand-roll JWT only with a stated reason (e.g., service-to-service tokens you
+fully control).
 
 ### JWT Token Validation
 
@@ -281,7 +307,8 @@ interface JWTPayload {
 
 export function verifyToken(token: string): JWTPayload {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload
+    // Always pin algorithms — prevents alg-confusion attacks (e.g., none/RS256 swap)
+    return jwt.verify(token, process.env.JWT_SECRET!, { algorithms: ['HS256'] }) as JWTPayload
   } catch {
     throw new ApiError(401, 'Invalid token')
   }
@@ -293,6 +320,8 @@ export async function requireAuth(request: Request) {
   return verifyToken(token)
 }
 ```
+
+Issue short-lived access tokens (e.g., `expiresIn: '15m'`) and rotate via refresh tokens — never mint long-lived access tokens.
 
 ### Role-Based Access Control
 
@@ -348,7 +377,7 @@ class JobQueue<T> {
       try {
         await this.execute(job)
       } catch (err) {
-        logger.error('Job failed', { err })  // structured logger — never console.* in production
+        logger.error({ err }, 'Job failed')
       }
     }
     this.processing = false
@@ -364,39 +393,28 @@ For production: use BullMQ (Redis-backed) or Inngest (serverless-friendly) with 
 
 ## Logging & Monitoring
 
-### Structured Logging
+No bare `console.log` strings in production code. Structured JSON to stdout via a logger
+(pino or equivalent) is the standard.
 
 ```typescript
-class Logger {
-  log(level: 'info' | 'warn' | 'error', message: string, context?: Record<string, unknown>) {
-    console.log(JSON.stringify({
-      timestamp: new Date().toISOString(),
-      level,
-      message,
-      ...context,
-    }))
-  }
+import pino from 'pino'
 
-  info(message: string, context?: Record<string, unknown>) { this.log('info', message, context) }
-  warn(message: string, context?: Record<string, unknown>) { this.log('warn', message, context) }
-  error(message: string, error: Error, context?: Record<string, unknown>) {
-    this.log('error', message, { ...context, error: error.message, stack: error.stack })
-  }
-}
-
-const logger = new Logger()
+const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' })
 
 // Usage
 export async function GET(request: Request) {
   const requestId = crypto.randomUUID()
-  logger.info('Fetching markets', { requestId, path: '/api/markets' })
+  logger.info({ requestId, path: '/api/markets' }, 'Fetching markets')
 
   try {
     const markets = await fetchMarkets()
-    return NextResponse.json({ success: true, data: markets })
+    return NextResponse.json({ data: markets })
   } catch (error) {
-    logger.error('Failed to fetch markets', error as Error, { requestId })
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    logger.error({ requestId, err: error }, 'Failed to fetch markets')
+    return NextResponse.json(
+      { error: { code: 'internal_error', message: 'Internal server error' } },
+      { status: 500 },
+    )
   }
 }
 ```

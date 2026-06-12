@@ -1,5 +1,6 @@
 #!/bin/bash
 # Stop gate: batch format + typecheck of files edited this session.
+# TS always; Python/Go/Rust only when the project demonstrably uses the tool.
 # Modes via HARNESS_STOP_GATE: block (default) | strict (tests required too) | off
 # Loop safety: exits 0 when stop_hook_active; accumulator is clear-on-read,
 # so a block fires at most once per batch of edits.
@@ -68,9 +69,12 @@ if [ -n "$ts_only" ]; then
     out=$( (cd "$tdir" && timeout 240 $trun tsc --noEmit --pretty false 2>&1) || true )
     [ -n "$out" ] || continue
     # only surface errors that mention files edited this session
+    # (basename fallback: tsc may emit rootDir-relative paths)
     rel=$(printf '%s\n' "$ts_only" | while IFS= read -r f; do
-      [[ "$f" == "$tdir"/* ]] && printf '%s\n' "${f#"$tdir"/}" || true
-    done)
+      [[ "$f" == "$tdir"/* ]] || continue
+      printf '%s\n' "${f#"$tdir"/}"
+      basename "$f"
+    done | sort -u)
     [ -n "$rel" ] || continue
     hits=$(printf '%s\n' "$out" | grep -F -f <(printf '%s\n' "$rel") 2>/dev/null | head -40 || true)
     [ -n "$hits" ] && errors="${errors}
@@ -79,7 +83,90 @@ $hits"
   done <<< "$tsdirs"
 fi
 
-# --- 3) Test reminder (warn; blocks only in strict mode) ----------------------
+# --- 2b) Python typecheck (only when the project demonstrably configures
+# mypy or pyright; missing tool/config => silent skip — never a false block)
+py_only=$(printf '%s\n' "$edited" | grep -E '\.py$' || true)
+if [ -n "$py_only" ]; then
+  py_map=$(while IFS= read -r f; do
+    tool=""; root=""
+    if root=$(nearest_up "$f" mypy.ini); then tool="mypy"
+    elif root=$(nearest_up "$f" setup.cfg) && grep -q '^\[mypy\]' "$root/setup.cfg" 2>/dev/null; then tool="mypy"
+    elif root=$(nearest_up "$f" pyproject.toml) && grep -qE '^\[tool\.mypy(\]|\.)' "$root/pyproject.toml" 2>/dev/null; then tool="mypy"
+    elif root=$(nearest_up "$f" pyrightconfig.json); then tool="pyright"
+    else continue
+    fi
+    printf '%s\t%s\t%s\n' "$tool" "$root" "$f"
+  done <<< "$py_only" | sort -u)
+  py_groups=$(printf '%s\n' "$py_map" | cut -f1,2 | sort -u)
+  while IFS=$'\t' read -r ptool proot; do
+    [ -n "$proot" ] || continue
+    command -v "$ptool" >/dev/null 2>&1 || continue
+    rels=$(printf '%s\n' "$py_map" | while IFS=$'\t' read -r t r f; do
+      [ "$t" = "$ptool" ] && [ "$r" = "$proot" ] && printf '%s\n' "${f#"$proot"/}" || true
+    done)
+    [ -n "$rels" ] || continue
+    pargs=()
+    while IFS= read -r rf; do pargs+=("$rf"); done <<< "$rels"
+    if [ "$ptool" = "mypy" ]; then
+      out=$( (cd "$proot" && timeout 120 mypy --no-error-summary "${pargs[@]}" 2>/dev/null) || true )
+    else
+      out=$( (cd "$proot" && timeout 120 pyright "${pargs[@]}" 2>/dev/null) || true )
+    fi
+    [ -n "$out" ] || continue
+    pats=$( { printf '%s\n' "$rels"; while IFS= read -r rf; do basename "$rf"; done <<< "$rels"; } | sort -u)
+    hits=$(printf '%s\n' "$out" | grep -F ' error:' | grep -F -f <(printf '%s\n' "$pats") 2>/dev/null | head -40 || true)
+    [ -n "$hits" ] && errors="${errors}
+[$ptool: $proot]
+$hits"
+  done <<< "$py_groups"
+fi
+
+# --- 2c) Go vet on packages containing edited files (go.mod projects only)
+go_only=$(printf '%s\n' "$edited" | grep -E '\.go$' || true)
+if [ -n "$go_only" ] && command -v go >/dev/null 2>&1; then
+  godirs=$(printf '%s\n' "$go_only" | while IFS= read -r f; do
+    nearest_up "$f" go.mod >/dev/null && dirname "$f" || true
+  done | sort -u)
+  while IFS= read -r gdir; do
+    [ -n "$gdir" ] || continue
+    gnames=$(printf '%s\n' "$go_only" | while IFS= read -r f; do
+      [ "$(dirname "$f")" = "$gdir" ] && basename "$f" || true
+    done | sort -u)
+    [ -n "$gnames" ] || continue
+    out=$( (cd "$gdir" && timeout 120 go vet . 2>&1) || true )
+    [ -n "$out" ] || continue
+    # only surface lines mentioning edited files (env failures never block)
+    hits=$(printf '%s\n' "$out" | grep -F -f <(printf '%s\n' "$gnames") 2>/dev/null | head -40 || true)
+    [ -n "$hits" ] && errors="${errors}
+[go vet: $gdir]
+$hits"
+  done <<< "$godirs"
+fi
+
+# --- 2d) Rust cargo check (Cargo.toml projects only)
+rs_only=$(printf '%s\n' "$edited" | grep -E '\.rs$' || true)
+if [ -n "$rs_only" ] && command -v cargo >/dev/null 2>&1; then
+  crates=$(printf '%s\n' "$rs_only" | while IFS= read -r f; do
+    nearest_up "$f" Cargo.toml || true
+  done | sort -u)
+  while IFS= read -r cdir; do
+    [ -n "$cdir" ] || continue
+    rnames=$(printf '%s\n' "$rs_only" | while IFS= read -r f; do
+      [[ "$f" == "$cdir"/* ]] || continue
+      printf '%s\n' "${f#"$cdir"/}"
+      basename "$f"
+    done | sort -u)
+    [ -n "$rnames" ] || continue
+    out=$( (cd "$cdir" && timeout 240 cargo check --quiet --message-format=short 2>&1) || true )
+    [ -n "$out" ] || continue
+    hits=$(printf '%s\n' "$out" | grep -E 'error(\[[A-Za-z0-9]+\])?:' | grep -F -f <(printf '%s\n' "$rnames") 2>/dev/null | head -40 || true)
+    [ -n "$hits" ] && errors="${errors}
+[cargo check: $cdir]
+$hits"
+  done <<< "$crates"
+fi
+
+# --- 3) Test reminder (warn-once in block mode; strict mode also blocks) ------
 # Threshold: >=3 source files, OR >=1 file in a security-sensitive path.
 reminder=""
 nfiles=$(printf '%s\n' "$edited" | grep -cE '\.(ts|tsx|js|jsx|py|go|rs|rb|swift|kt)$' 2>/dev/null || true)
@@ -97,7 +184,7 @@ fi
 if [ -n "$errors" ] || [ -n "$tsc_missing" ]; then
   {
     if [ -n "$errors" ]; then
-      echo "Stop gate: TypeScript errors in files you edited this session. Fix them before finishing:"
+      echo "Stop gate: typecheck errors in files you edited this session. Fix them before finishing:"
       echo "$errors"
     fi
     if [ -n "$tsc_missing" ]; then
@@ -108,8 +195,15 @@ if [ -n "$errors" ] || [ -n "$tsc_missing" ]; then
   exit 2
 fi
 
-if [ -n "$reminder" ] && [ "$GATE_MODE" = "strict" ]; then
-  echo "Stop gate (strict): $reminder" >&2
+if [ -n "$reminder" ]; then
+  if [ "$GATE_MODE" = "strict" ]; then
+    echo "Stop gate (strict): $reminder" >&2
+  else
+    # Stop hooks only reach the model via exit 2 + stderr (exit 0 output goes
+    # to the transcript, not the model). Mirror the tsc-missing warn-once
+    # mechanism: the accumulator is clear-on-read, so the next stop passes.
+    echo "Stop gate: $reminder (This reminder fires once per edit batch.)" >&2
+  fi
   exit 2
 fi
 

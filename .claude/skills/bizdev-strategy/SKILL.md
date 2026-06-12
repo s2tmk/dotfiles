@@ -28,7 +28,7 @@ Each hypothesis must be falsifiable: state what evidence would prove it wrong. D
 
 ## Section 2 — Evidence
 
-**Never invent numbers in this section.** All market sizing and competitive facts come from the **market-research** skill. Gate: if no market-research output exists (as a file or in this conversation), **STOP — do not estimate or paraphrase market data.** Run market-research first, then return here.
+**Never invent numbers in this section.** All market sizing and competitive facts come from the **market-research** skill. Gate: if no market-research output exists (at `docs/strategy/<product>-market-research.md` or in this conversation), **STOP — do not estimate or paraphrase market data.** Run market-research first, then return here.
 
 Structure the evidence as:
 
@@ -73,14 +73,23 @@ Also flag macro risks (regulatory change, technology shift, competitor move) wit
 
 State the recommended option from Section 3 with the rationale tied explicitly to the evidence in Section 2.
 
+### Unit Economics & Pricing
+
+For the recommended option, state compactly:
+- **Pricing hypothesis** — price point + willingness-to-pay evidence from Section 2 (reference price, interview/survey signal)
+- **CAC / LTV / payback** — estimates with method stated, labeled 推定 where estimated
+- **Gross-margin sanity check** — price minus COGS drivers (infra, support, payment fees); flag if the margin cannot support the chosen business model
+
 ### Phased Roadmap
 
-**Phase 0 — Validate (weeks 1–8)**
+Phase durations below are typical — adjust to evidence, not the calendar.
+
+**Phase 0 — Validate (typical: weeks 1–8)**
 - Objective: test the kill criteria from Section 4 before committing engineering resources
 - Activities: customer discovery interviews, landing page / smoke test, competitive pricing audit
 - Exit criterion: [specific, measurable signal]
 
-**Phase 1 — Build (months 2–6)**
+**Phase 1 — Build (typical: months 2–6)**
 - Objective: deliver the minimum surface area that proves the core value hypothesis
 - Feature proposals: each feature tied to a specific user-need signal from Section 2
   ```
@@ -91,12 +100,12 @@ State the recommended option from Section 3 with the rationale tied explicitly t
 - Open questions for engineers: unresolved technical decisions that affect build scope
 - Open questions for designers: unresolved UX decisions that affect usability assumptions
 
-**Phase 2 — Scale (months 6–18)**
+**Phase 2 — Scale (typical: months 6–18)**
 - Objective: expand from early adopters to the broader SAM
 - GTM motion: [channel, sales model, partnership strategy]
 - Key metrics to hit before Phase 3: [specific targets, labeled 推定]
 
-**Phase 3 — Defend (18 months+)**
+**Phase 3 — Defend (typical: 18 months+)**
 - Objective: build the moat identified in Section 3
 - Milestones tied to the SOM capture assumptions from Section 2
 
@@ -111,11 +120,21 @@ After this document is complete, route downstream work as follows:
 
 ---
 
+## Appendix — Phase 0 Validation Instruments
+
+- **Discovery interviews**: problem interviews, not pitches — ask about current behavior, past attempts, and what they pay today; never "would you use this?". Open questions only; n≥10 per segment; actively seek disconfirming evidence and record it.
+- **Smoke test**: a landing page stating the value proposition plus a real signup-intent action (email signup, waitlist, preorder). Measure intent conversion against a pre-stated threshold, not traffic.
+- **Rule**: every kill criterion in Section 4 must reference one of these instruments (e.g., "fewer than 3 of 10 interviews name this a top-3 pain" or "intent conversion < 3%").
+
+---
+
 ## Verification Gate
 
 Before delivery, run the **research-reviewer** agent on the draft. Pass it ONLY the draft and source list — not your reasoning. FAIL ⇒ fix and re-run. Never deliver an unverified strategy document. If the document fails research-reviewer twice, STOP and surface the unresolved HIGH findings to the user — do not loop silently.
 
 ## Output Checklist
+
+**MUST**: write the final strategy document to `docs/strategy/<product>-strategy.md` — downstream skills (investor-materials, requirements-design) look for it at this path.
 
 Before delivering:
 
@@ -125,6 +144,8 @@ Before delivering:
 - [ ] 2–3 options compared with explicit trade-offs (Section 3)
 - [ ] Kill criteria stated for each hypothesis (Section 4)
 - [ ] Recommended option justified by evidence, not assertion (Section 5)
+- [ ] Unit economics & pricing stated: WTP evidence, CAC/LTV/payback (推定 labeled), gross-margin check (Section 5)
+- [ ] Every kill criterion references a Phase 0 validation instrument (Section 4 / Appendix)
 - [ ] Phased roadmap with exit criteria per phase (Section 5)
 - [ ] Feature proposals each tied to a user-need signal (Section 5)
 - [ ] Downstream handoffs named (Section 6)

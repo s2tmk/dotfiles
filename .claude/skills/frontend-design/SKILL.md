@@ -4,6 +4,8 @@ description: Create distinctive, production-grade frontend interfaces with high 
 license: Complete terms in LICENSE.txt
 ---
 
+**Precedence**: ux-ui-design's anti-pattern table, type/spacing scales, and conventions OVERRIDE anything below. This skill supplies creative direction WITHIN those constraints.
+
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 
 The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
@@ -33,13 +35,13 @@ Focus on:
   - **Heading letter-spacing**: apply −1% to −3% (`letter-spacing: -0.01em` to `-0.03em`) for display sizes ≥32px. Tight tracking at large sizes signals typographic intention; loose or default tracking at those sizes reads as an afterthought.
   - Pair a distinctive display font with a refined body font — unexpected, characterful display face with a workhorse body that doesn't compete.
 - **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
-- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
-- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
-- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
+- **Motion**: Motion must clarify state or orientation — never decorate. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Hover and scroll effects must be predictable and purposeful; honor `prefers-reduced-motion`.
+- **Spatial Composition**: Create visual interest through scale contrast, weight, and density WITHIN the grid. Generous negative space OR controlled density — every element still aligns to the layout grid and the 4/8px spacing system.
+- **Backgrounds & Visual Details**: Backgrounds are canvases — let content create the visual interest. No mesh-gradient blobs, noise textures, or grain overlays (rejected by ux-ui-design's anti-pattern table). Atmosphere comes from a purposeful palette, restrained geometric patterns, and shadows that convey real elevation — never decoration that competes with content.
 
 NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
 
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
+Interpret creatively and make choices that feel genuinely designed for the context. Give each PRODUCT a distinctive identity, then keep it consistent: within a product, reuse the same typefaces, palette, theme, and component conventions across every screen. Do not default to common AI choices (Space Grotesk, for example) — but never sacrifice product-level consistency for per-generation novelty.
 
 **IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
 

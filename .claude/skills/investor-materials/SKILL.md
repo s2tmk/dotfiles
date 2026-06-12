@@ -34,7 +34,7 @@ If conflicting numbers appear, stop and resolve them before drafting.
 
 ## Market Data Prerequisite
 
-Market size and competitive claims MUST trace back to a **market-research** output (or the Evidence section of a **bizdev-strategy** document). If they don't exist, run **market-research** first — never accept TAM/SAM numbers that exist only in the deck.
+Market size and competitive claims MUST trace back to a **market-research** output (`docs/strategy/<product>-market-research.md`) or the Evidence section of a **bizdev-strategy** document (`docs/strategy/<product>-strategy.md`). If they don't exist, run **market-research** first — never accept TAM/SAM numbers that exist only in the deck.
 
 ## Core Workflow
 
@@ -62,7 +62,7 @@ Recommended flow:
 11. Use of funds / milestones
 12. Appendix
 
-If the user wants a web-native deck, pair this skill with `frontend-slides`.
+If the user wants a web-native (HTML) deck, pair this skill with the **frontend-design** skill.
 
 ### One-Pager / Memo
 
@@ -75,11 +75,21 @@ If the user wants a web-native deck, pair this skill with `frontend-slides`.
 ### Financial Model
 
 Include:
-- Explicit assumptions
-- Bear / base / bull cases when useful
-- Clean layer-by-layer revenue logic
+- **Driver tree**: revenue derived from explicit drivers (e.g., leads × conversion × ACV − churn) — never a flat growth percentage
+- **Burn / runway**: monthly burn by category and runway in months, at current cash and post-raise
+- **Cohort / retention logic**: projections must encode a per-cohort retention/churn assumption, not aggregate growth
+- **Bear / base / bull**: each case derived only from named assumption changes (e.g., "bear: conversion 1% vs. base 2%") — never free-drawn curves
 - Milestone-linked spending
 - Sensitivity analysis where the decision hinges on assumptions
+
+### Funding Instruments (JP context)
+
+For Japan-based raises, consider alongside SAFE / priced equity:
+- **J-KISS** — the standard JP convertible (post-money SAFE equivalent)
+- **日本政策金融公庫 創業融資** — non-dilutive startup loans
+- **補助金** — IT導入補助金, ものづくり補助金 and similar (non-dilutive; eligibility windows apply)
+
+State the chosen instrument and the reason in the ask.
 
 ### Accelerator Applications
 
@@ -97,6 +107,8 @@ Include:
 - Inflated certainty where assumptions are fragile
 
 ## Quality Gate
+
+**MUST**: write each deliverable to `docs/strategy/<product>-investor/<doc>.md` (e.g., `.../pitch-deck.md`, `.../financial-model.md`).
 
 Before delivering:
 - Every number matches the current source of truth

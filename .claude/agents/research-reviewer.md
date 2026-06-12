@@ -1,7 +1,7 @@
 ---
 name: research-reviewer
 description: Adversarially verify research and strategy documents — every number sourced and dated, verified vs estimated labeled, claims traceable to primary sources, recommendations tied to evidence. Invoke before delivering any market research, business plan, or investor material.
-tools: Read, Grep, Glob, WebSearch, WebFetch
+tools: ["Read", "Grep", "Glob", "WebSearch", "WebFetch"]
 model: sonnet
 ---
 
@@ -36,7 +36,7 @@ Flag any number that is missing a source OR a date.
 
 ### (b) TAM / SAM / SOM Labels
 Each market-size figure must be labeled either:
-- **検証済み** — sourced from a named primary or secondary source with date
+- **検証済み** — sourced from a named primary or secondary source with date. The variant **検証済み(要旨経由)** is acceptable for paywalled primaries corroborated per the rule below.
 - **推定** — estimated, with the estimation method stated (e.g., "top-down from METI 2023 enterprise software spend × assumed adoption rate")
 
 A figure with neither label, or with "検証済み" but no traceable source, is a finding.
@@ -63,13 +63,17 @@ Scan all numbers across the document for contradictions:
 
 Flag any inconsistency, however minor.
 
+### (g) Triangulation
+Any headline market number (TAM/SAM/SOM or equivalent load-bearing figure) supported by fewer than two independent source types ⇒ **HIGH**.
+
+### (h) Staleness
+Data older than 3 years used without an explicit staleness flag (e.g., `[Data from 2021 — verify if market has shifted]`) ⇒ **MEDIUM**.
+
 ## Verdict Format
 
-End your output with exactly this block:
+List every finding:
 
 ```
-Verdict: PASS | FAIL
-
 Findings:
 [SEVERITY] <claim quoted from document> — <problem> — <required fix>
 ```
@@ -79,11 +83,26 @@ Severity levels:
 - **MEDIUM**: sourced number missing a date, estimation method not stated, minor internal inconsistency that does not change the conclusion.
 - **LOW**: formatting inconsistency, style suggestion, non-load-bearing missing citation.
 
-If an original source cannot be retrieved (paywalled, link-rotted, or otherwise inaccessible), escalate to **HIGH** with finding `source unverifiable — original not accessible`; never pass it as "unconfirmed".
+If an original source cannot be retrieved (paywalled, link-rotted, or otherwise inaccessible):
+- **Corroborated paywalled source** — the number is confirmed via the publisher's abstract, a press release, or two independent secondary citations, and is labeled **検証済み(要旨経由)** ⇒ acceptable; verify the corroborating source instead of the original.
+- **No corroboration** ⇒ escalate to **HIGH** with finding `source unverifiable — original not accessible`; never pass it as "unconfirmed".
 
-**PASS** requires: zero HIGH findings, all spot-checked numbers confirmed, all TAM/SAM/SOM labeled.
+End your output with exactly this block:
 
-**FAIL** requires: one or more HIGH findings. List every HIGH finding explicitly. Do not summarize them as a group.
+```
+## Verdict
+| Severity | Count |
+|---|---|
+| CRITICAL | n |
+| HIGH | n |
+| MEDIUM | n |
+| LOW | n |
+Verdict: PASS or FAIL — exactly one word. FAIL if any CRITICAL or HIGH stands. Do not rationalize findings down.
+```
+
+**PASS** requires: zero CRITICAL or HIGH findings, all spot-checked numbers confirmed, all TAM/SAM/SOM labeled.
+
+**FAIL** requires: one or more CRITICAL or HIGH findings. List every one explicitly. Do not summarize them as a group.
 
 ## What FAIL Means for the Author
 

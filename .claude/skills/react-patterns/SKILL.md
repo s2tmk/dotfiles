@@ -1,6 +1,6 @@
 ---
 name: react-patterns
-description: React 18/19 component patterns, hooks discipline, server/client component boundaries, Suspense, form actions, state management decision tree, and data fetching strategies. Load when writing, reviewing, or architecting React components or custom hooks.
+description: React 18/19 component patterns, hooks discipline, server/client component boundaries, Suspense, form actions, state management decision tree, and data fetching strategies. Load for React コンポーネント設計, フック, 状態管理, サーバーコンポーネント, フォーム実装, writing, reviewing, or architecting React components, custom hooks, and RSC boundaries.
 origin: ECC
 ---
 
@@ -85,8 +85,10 @@ Most pages do not need context or a global store. Resist abstraction until dupli
 
 ```tsx
 // Server Component - default, async, never ships JS for itself
-export default async function ProductPage({ params }: { params: { id: string } }) {
-  const product = await db.product.findUnique({ where: { id: params.id } });
+// Next.js 15+: route params is a Promise — await it
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const product = await db.product.findUnique({ where: { id } });
   if (!product) notFound();
   return <ProductView product={product} />;
 }
@@ -131,18 +133,28 @@ Boundaries:
 ### React 19 form actions (preferred for new code)
 
 ```tsx
-"use client";
-import { useActionState } from "react";
+// actions.ts — Server Actions live in their own file with top-level "use server".
+// Defining an inline "use server" function inside a "use client" file is a build error in Next.js.
+"use server";
 
-const initial = { error: null as string | null };
-
-async function updateUserAction(_prev: typeof initial, formData: FormData) {
-  "use server";
+export async function updateUserAction(
+  _prev: { error: string | null },
+  formData: FormData,
+) {
   const parsed = UserSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Invalid input" };
   await db.user.update({ where: { id: parsed.data.id }, data: parsed.data });
   return { error: null };
 }
+```
+
+```tsx
+// UserForm.tsx — client component imports the action
+"use client";
+import { useActionState } from "react";
+import { updateUserAction } from "./actions";
+
+const initial = { error: null as string | null };
 
 export function UserForm() {
   const [state, formAction, pending] = useActionState(updateUserAction, initial);
@@ -221,6 +233,8 @@ Useful when the parent needs to pass parameters to the rendered output:
 Modern alternative: a hook (`useData(id)`) returning the same shape — usually cleaner.
 
 ## Performance
+
+If React Compiler is enabled (default on new Next.js/Vite templates since 2025), never hand-memoize — the guidance below applies only without the compiler.
 
 ### When `React.memo` Actually Helps
 

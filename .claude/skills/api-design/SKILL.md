@@ -1,6 +1,6 @@
 ---
 name: api-design
-description: REST API design patterns covering resource naming, HTTP semantics, status codes, pagination (offset/cursor), filtering, sorting, error response format, versioning, rate limiting, and OpenAPI documentation. Load when designing, reviewing, or extending API endpoints.
+description: REST API design patterns covering resource naming, HTTP semantics, status codes, pagination (offset/cursor), filtering, sorting, error response format, versioning, rate limiting, and OpenAPI documentation. Load for API設計, エンドポイント設計, REST, ページネーション, バージョニング, エラーレスポンス, designing, reviewing, or extending API endpoints.
 origin: ECC
 ---
 
@@ -80,12 +80,12 @@ POST   /api/v1/auth/refresh
 204 No Content            — DELETE, PUT (no response body)
 
 # Client Errors
-400 Bad Request           — Validation failure, malformed JSON
+400 Bad Request           — Malformed syntax (unparseable JSON, bad encoding)
 401 Unauthorized          — Missing or invalid authentication
 403 Forbidden             — Authenticated but not authorized
 404 Not Found             — Resource doesn't exist
 409 Conflict              — Duplicate entry, state conflict
-422 Unprocessable Entity  — Semantically invalid (valid JSON, bad data)
+422 Unprocessable Content — Validation failure (well-formed JSON, bad data)
 429 Too Many Requests     — Rate limit exceeded
 
 # Server Errors
@@ -93,6 +93,8 @@ POST   /api/v1/auth/refresh
 502 Bad Gateway           — Upstream service failed
 503 Service Unavailable   — Temporary overload, include Retry-After
 ```
+
+Tiebreaker (canonical rule — other skills conform to this): validation failures → 422; malformed syntax → 400.
 
 ### Common Mistakes
 
@@ -105,7 +107,7 @@ HTTP/1.1 404 Not Found
 { "error": { "code": "not_found", "message": "User not found" } }
 
 # BAD: 500 for validation errors
-# GOOD: 400 or 422 with field-level details
+# GOOD: 422 with field-level details (400 only for malformed syntax)
 
 # BAD: 200 for created resources
 # GOOD: 201 with Location header
@@ -335,6 +337,8 @@ HTTP/1.1 200 OK
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1640000000
+# Note: IETF is standardizing RateLimit / RateLimit-Policy headers
+# (draft-ietf-httpapi-ratelimit-headers); prefer them for new public APIs.
 
 # When exceeded
 HTTP/1.1 429 Too Many Requests
@@ -405,7 +409,7 @@ import { z } from "zod";
 import { NextRequest, NextResponse } from "next/server";
 
 const createUserSchema = z.object({
-  email: z.string().email(),
+  email: z.email(),  // Zod 4: top-level z.email(), not z.string().email()
   name: z.string().min(1).max(100),
 });
 

@@ -12,7 +12,7 @@ Produce research that supports decisions, not research theater.
 
 ## Tool Integration
 
-For any non-trivial research question, invoke the **deep-research** harness skill for multi-source fan-out with adversarial verification — its cited output is the raw evidence layer; this skill defines the synthesis and output format on top. For targeted lookups use **WebSearch** (query execution) and **WebFetch** (primary-source retrieval). **Hard gate: never write findings without executed searches — a deliverable whose claims lack an executed deep-research/WebSearch trail fails the Verification Gate automatically.**
+For any non-trivial research question, invoke the **deep-research** harness skill for multi-source fan-out with adversarial verification — its cited output is the raw evidence layer; this skill defines the synthesis and output format on top. For targeted lookups use **WebSearch** (query execution) and **WebFetch** (primary-source retrieval). **Hard gate: never write findings without executed searches — a deliverable whose claims lack an executed deep-research/WebSearch trail fails the Verification Gate automatically.** If the deep-research skill is unavailable, run the WebSearch fan-out manually (multiple query angles, then fetch and verify primary sources).
 
 ## When to Activate
 
@@ -43,11 +43,22 @@ Prefer in this order:
 4. **Company filings and earnings calls** — primary source for public company data
 5. **Reputable journalism** — only for recent developments not yet in structured sources; verify with a second source
 
+For Japanese markets, the equivalent tier is:
+1. **Government statistics** — e-Stat, 総務省統計局, 経済産業省の業種別統計・特定サービス産業動態統計, 中小企業白書, RESAS
+2. **Industry research** — 矢野経済研究所, 富士キメラ総研, 帝国データバンク, 東京商工リサーチ
+3. **Academic discovery** — J-STAGE, CiNii, Google Scholar
+
+For Japanese markets, search in Japanese; English-only queries systematically miss JP sources.
+
 Avoid: press releases, vendor-sponsored white papers, and unattributed "industry experts say" claims.
+
+### Paywalled Sources
+
+A paywalled primary source (Gartner, IDC, 矢野経済研究所, etc.) is admissible when corroborated via the publisher's abstract, a press release, or two independent secondary citations — label the number **検証済み(要旨経由)** and cite the corroborating source. A paywalled number with no corroboration is unverified (推定 at best); research-reviewer flags it HIGH.
 
 ### Triangulation Requirement
 
-Market size claims must be triangulated across at least two independent source types:
+Market size claims must be triangulated across **at least two independent source types**. The example below uses three — above the minimum bar:
 
 ```
 Example: SaaS market in Japan
@@ -70,7 +81,7 @@ Always distinguish:
 - **TAM**: theoretical maximum, requires explicit assumption (e.g., "assumes all enterprises with >50 employees adopt")
 - **SAM**: addressable segment given your model and geography — must have defensible filter logic
 - **SOM**: realistic capture in 3-5 years — must tie to specific GTM assumptions, not a generic percentage
-- **Verified vs estimated**: label each number as one or the other
+- **検証済み vs 推定**: label each number with exactly one of these labels — **検証済み** (verified against a cited source; 検証済み(要旨経由) for corroborated paywalled sources) or **推定** (estimated, with method stated). research-reviewer checks these exact labels.
 
 ```
 Bad:  "TAM is $10B"
@@ -145,6 +156,8 @@ Open questions after this research:
 ```
 
 ## Output Format
+
+**MUST**: write the deliverable to `docs/strategy/<product>-market-research.md` — downstream skills (bizdev-strategy, investor-materials) look for it at this path.
 
 Default structure:
 

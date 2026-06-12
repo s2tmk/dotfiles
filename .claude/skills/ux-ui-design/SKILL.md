@@ -102,12 +102,12 @@ Use Figma at appropriate fidelity for the stakes of the work:
 
 Use a modular scale. Don't invent arbitrary sizes.
 
-**This scale is the single source of truth; frontend-patterns' Tailwind sizes are a mapping of this scale.**
+**This scale is the single source of truth; frontend-patterns' Tailwind sizes are a mapping of this scale.** Tailwind named-size approximations (`text-2xl` = 24px, `text-3xl` = 30px, etc.) explicitly count as on-scale — pixel-exact fidelity is not required when using named sizes. Arbitrary values (`text-[13px]`, `text-[17px]`) remain off-scale.
 
 ```css
 :root {
   /* Type scale (1.25 ratio — "Major Third") */
-  --text-xs:    0.64rem;   /* 10px  — captions, legal */
+  --text-xs:    0.64rem;   /* 10px  — EN-only captions, legal; never for JA text (12px JA minimum) */
   --text-sm:    0.8rem;    /* 13px  — secondary labels */
   --text-base:  1rem;      /* 16px  — body copy */
   --text-lg:    1.25rem;   /* 20px  — large body, intro */
@@ -119,8 +119,9 @@ Use a modular scale. Don't invent arbitrary sizes.
   /* Line heights */
   --leading-tight:   1.2;   /* headings */
   --leading-snug:    1.375; /* subheadings */
-  --leading-normal:  1.5;   /* body */
-  --leading-relaxed: 1.75;  /* long-form reading */
+  --leading-normal:  1.5;   /* EN body (1.5–1.6) */
+  --leading-relaxed: 1.75;  /* long-form EN reading */
+  --leading-ja:      1.8;   /* JA body (1.7–1.9 — kanji needs more leading) */
 
   /* Letter spacing */
   --tracking-tight: -0.02em;  /* large headings */
@@ -133,9 +134,24 @@ Vertical rhythm: body copy line-height × base font-size = baseline grid unit. S
 
 ---
 
+## Japanese Typography (日本語タイポグラフィ)
+
+For Japanese-market products, these rules override the Latin defaults above:
+
+- **Font stacks**: `"Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif`. When pairing with a Latin face, list the Latin font FIRST so it renders Latin glyphs, with the JP stack as fallback (e.g. `"Source Serif 4", "Noto Sans JP", sans-serif`); match x-height and weight visually across the pair.
+- **Line-height**: JA body text 1.7–1.9 (kanji needs more leading); EN body 1.5–1.6.
+- **Letter-spacing**: never negative on kanji/kana — `tracking-tight` is Latin-only. JA body defaults to 0; up to 0.05em for small JA labels.
+- **`font-feature-settings: "palt"`** (proportional metrics): display/heading text only — never on body text.
+- **禁則処理**: set `line-break: strict` on JA text. Use `overflow-wrap: anywhere` with caution on CJK — it can break 禁則; prefer `word-break: normal`.
+- **Line length**: JA body 全角35–40字 per line (EN body: 45–75 characters).
+- **Mixed JA/EN baselines**: use unitless `line-height`; avoid `vertical-align` hacks to align Latin runs inside JA text.
+- **Minimum size**: 12px for JA captions and labels — 10px kanji is illegible. `--text-xs` (10px) is EN-only.
+
+---
+
 ## Spacing System — 4/8px Grid
 
-Every space in the layout must be a multiple of 4px.
+Every space in the layout must be a multiple of 4px. Exception: 2px is allowed for borders, hairlines, and fine detail (Tailwind 0.5 steps acceptable there only) — never for padding, margin, or gap.
 
 ```css
 :root {
@@ -241,6 +257,7 @@ The following patterns indicate template-level output that a senior designer wou
 | All-sans font with no personality | Uncurated generic output | Choose a typeface with character appropriate to the domain |
 | Features described inside the UI | Treats users as prospects, not users | Controls speak for themselves; remove instructional copy from production UI |
 | Dark UI with purple accents | Default "AI product" aesthetic | Dark UIs need strong contrast ratios and a purposeful reason; don't default to dark because it "looks tech" |
+| Emoji used as functional icons | Inconsistent rendering across platforms; no sizing/color control; reads as unfinished | Use an icon set (Lucide, Heroicons, etc.) with `aria-label`/`aria-hidden` as appropriate |
 
 ---
 
@@ -254,8 +271,9 @@ Before marking UI work complete:
 - [ ] There is a single dominant element per view — not three competing primaries
 
 ### Typography
-- [ ] All type sizes come from the modular scale
-- [ ] Line lengths are 45–75 characters for body copy
+- [ ] All type sizes come from the modular scale (Tailwind named-size approximations count as on-scale)
+- [ ] Line lengths: EN body 45–75 characters; JA body 全角35–40字
+- [ ] JA text: line-height 1.7–1.9, no negative letter-spacing, minimum 12px
 - [ ] Typography fits containers and does not overflow on mobile
 
 ### Spacing & Layout
@@ -282,6 +300,10 @@ Before marking UI work complete:
 ### Assets
 - [ ] Real or generated data used (not Lorem Ipsum for a data-driven UI)
 - [ ] Images carry subject matter, not filler stock
+
+### States & Responsiveness
+- [ ] Empty, loading, error, and skeleton states designed for every screen — not just the happy path
+- [ ] Responsive check at 390px viewport width; primary actions keep 44×44px touch targets
 
 ### Overall
 - [ ] Result matches the existing frontend conventions unless there is a clear reason to depart

@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: Expert code quality evaluator. Invoke immediately after writing or modifying code, before any commit to shared branches, and for architectural or security-adjacent changes. MUST BE USED for all code changes.
+description: Expert code quality evaluator. Invoke immediately after writing or modifying code, before any commit to shared branches, and for architectural or security-adjacent changes. MUST BE USED for multi-file or architectural changes (CLAUDE.md defines the exemptions).
 tools: ["Read", "Grep", "Glob", "Bash"]
 model: sonnet
 ---
@@ -35,7 +35,7 @@ Before writing a finding, answer all four:
 3. Have I read surrounding context (callers, imports, tests)?
 4. Is the severity defensible? (missing JSDoc is never HIGH; a single `any` in a test is never CRITICAL)
 
-HIGH/CRITICAL findings must also include: the exact snippet + line number, the specific failure scenario, and why existing guards do not catch it. If you cannot produce all three, demote or drop.
+HIGH/CRITICAL findings must also include: the exact snippet + line number, the specific failure scenario, and why existing guards do not catch it. If you cannot produce all three, demote or drop. When you demote or drop a candidate finding, record it in the report with the reason. Silent demotion is forbidden.
 
 ## Review Checklist
 
@@ -98,20 +98,17 @@ Failure: Concrete input/state → bad outcome.
 Fix: Specific recommended change.
 ```
 
-End every review with:
+End every review with exactly this block:
 
 ```
-## Review Summary
-
+## Verdict
 | Severity | Count |
-|----------|-------|
-| CRITICAL | 0     |
-| HIGH     | 0     |
-| MEDIUM   | 0     |
-| LOW      | 0     |
-
-Verdict: PASS | FAIL
+|---|---|
+| CRITICAL | n |
+| HIGH | n |
+| MEDIUM | n |
+| LOW | n |
+Verdict: PASS or FAIL — exactly one word. FAIL if any CRITICAL or HIGH stands. Do not rationalize findings down.
 ```
 
-- **PASS**: Zero CRITICAL or HIGH findings (a clean review with zero rows is valid and expected — do not manufacture findings)
-- **FAIL**: Any CRITICAL or HIGH finding present
+The Verdict line states exactly one of PASS or FAIL. A clean review with all-zero counts is valid and expected — do not manufacture findings.
