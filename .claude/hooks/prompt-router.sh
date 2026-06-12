@@ -36,6 +36,14 @@ fi
 if printf '%s' "$prompt" | grep -qiE 'インフラ|AWS|GCP|Cloudflare|Terraform|VPC|IAM|serverless|deploy.*infra'; then
   add "Routing: cloud-infra skill (IaC, least-privilege, DR, cost guardrails)."
 fi
+# 'authenticat|authoriz' prefixes avoid matching plain "author"; bare
+# "checkout"/"subscription" are excluded (git checkout, GraphQL subscriptions).
+if printf '%s' "$prompt" | grep -qiE '認証|ログイン|サインアップ|会員登録|ソーシャルログイン|authenticat|authoriz|login|sign[- ]?up|OAuth|(^|[^a-zA-Z])SSO([^a-zA-Z]|$)'; then
+  add "Routing: auth-patterns skill (managed-provider selection, data-layer authz). security-reviewer is mandatory after auth changes."
+fi
+if printf '%s' "$prompt" | grep -qiE '決済|課金|サブスク|有料プラン|(^|[^a-zA-Z])stripe([^a-zA-Z]|$)|billing|payment'; then
+  add "Routing: stripe-payments skill (Checkout-first, JPY zero-decimal, webhook correctness). security-reviewer is mandatory after payment changes."
+fi
 
 [ -n "$emit" ] && printf '%s' "$emit"
 exit 0

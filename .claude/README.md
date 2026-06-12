@@ -29,7 +29,7 @@ directly, so hooks work even before the `hooks` symlink exists.
 | Layer | Role | Implementation |
 |---|---|---|
 | L1 always-on core | Routing decisions only (when to plan / delegate / evaluate / hand off) | `CLAUDE.md` (~80 lines) |
-| L2 on-demand knowledge | Domain patterns; only frontmatter is resident, bodies load when invoked | `skills/` (19) |
+| L2 on-demand knowledge | Domain patterns; only frontmatter is resident, bodies load when invoked | `skills/` (21) |
 | L3 deterministic enforcement | Quality gates independent of model tier | `hooks/` (7) + `agents/` evaluators (7) + codex second opinion |
 
 Design principle: **compliance with prose rules scales with model capability,
@@ -51,7 +51,7 @@ possible; L1 carries routing judgment only.
 **Kill switches:**
 - `HARNESS_HOOKS=off` — disables every hook instantly (emergency)
 - `HARNESS_STOP_GATE=off|block|strict` — Stop gate only (default block; strict also requires tests)
-- Regression tests: `bash hooks/run-tests.sh` (23 cases, incl. router false-positive guards)
+- Regression tests: `bash hooks/run-tests.sh` (27 cases, incl. router false-positive guards)
 
 **Known tradeoffs:** `sandbox.excludedCommands` exempts `git` and `docker` — docker
 runs outside the network sandbox (it needs the daemon), so container commands can
@@ -125,10 +125,12 @@ vs ux-ui-design doctrine conflict), gave design-reviewer/e2e-runner real
 Playwright access, added non-TS typecheck gates, JP market-research sources,
 CJK typography standards, and the artifact-persistence contract
 (`docs/strategy/`, `docs/requirements/`).
+v2.6 (2026-06-12): added stripe-payments and auth-patterns skills (JP-aware:
+JPY zero-decimal, konbini async payments, 特商法; data-layer authz, Supabase
+getUser, LINE Login) with router + CLAUDE.md wiring (run-tests: 27 cases).
 Remaining backlog: Figma round-trip as an enforced (not advisory) gate, a
 requirements-reviewer evaluator (brief quality is still only existence-checked),
-payments/Stripe + managed-auth implementation skills, customer-validation
-methodology depth, and a live Opus field trial.
+customer-validation methodology depth, and a live Opus field trial.
 
 ## Improvement loop (harness assumption auditing)
 

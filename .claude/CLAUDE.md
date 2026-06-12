@@ -58,6 +58,9 @@ Trigger keywords are listed in Japanese and English because user prompts are usu
   market-research evidence first; run it if missing.
   投資家資料・ピッチ / pitch decks, investor materials → investor-materials.
 - インフラ / AWS・GCP・Cloudflare・Terraform → cloud-infra
+- 認証・ログイン・会員機能 / auth & login → auth-patterns. 決済・課金・サブスク /
+  payments & billing → stripe-payments. Both end with a mandatory security-reviewer pass;
+  auth-flow design additionally triggers the codex cross-vendor review (see above).
 - Unknown task with no matching skill → search with find-skills before starting.
 
 ## Context management
